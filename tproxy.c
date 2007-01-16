@@ -7,12 +7,28 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
+
+#ifdef WIN32
+#include <winsock2.h>
+#define basename(foo)	foo	/* win32 su^H^Hlacks basename support */
+#define socklen_t int
+/* win32 doesn't flush stdout on a line-out-basis */
+#define printf(...) \
+do \
+{ \
+printf(__VA_ARGS__); \
+fflush(stdout); \
+} \
+while (0)
+#define read(a,b,c) recv(a,b,c,0)
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <stdlib.h>
 #include <libgen.h>
 #include <netdb.h>
+#endif
 
 #define PROXY_PORT	1234
 
@@ -74,13 +90,26 @@ int main( int argc, char *argv[])
 	}
 	printf( "++remote client=%s port=%d, local server port=%d\n", ch, cp, sp);
 
+#ifdef WIN32
+{
+        WSADATA wsaData;
+        int iResult;
+
+        iResult = WSAStartup( MAKEWORD( 2, 2), &wsaData);
+        if (iResult)
+        {
+                printf( "WSAStartup failed: %d\n", iResult);
+                return -4;
+        }
+}
+#endif
 	ss = socket( PF_INET, SOCK_STREAM, 0);
 	memset( &sa, 0, sizeof( sa));
 	sa.sin_addr.s_addr = INADDR_ANY;
 	sa.sin_port = htons( sp);
 	sa.sin_family = AF_INET;
 	on = 1;
-	setsockopt( ss, SOL_SOCKET, SO_REUSEADDR, &on, sizeof( on));
+	setsockopt( ss, SOL_SOCKET, SO_REUSEADDR, (const void *)&on, sizeof( on));
 	bind( ss, (struct sockaddr *)&sa, sizeof( sa));
 	listen( ss, 1);
 
@@ -130,7 +159,9 @@ int main( int argc, char *argv[])
 			int col = 0, size;
 
 			FD_ZERO( &rfds);
+#ifndef WIN32
 			FD_SET( 0, &rfds);
+#endif
 			FD_SET( cs, &rfds);
 			FD_SET( css, &rfds);
 			tv.tv_sec = 0;
@@ -230,7 +261,7 @@ int main( int argc, char *argv[])
 						if (n)
 						{
 							if (!disc || !src)
-								write( dst, ptr, n);
+								send( dst, ptr, n, 0);
 							if (src != 0)
 							{
 								asciify( buf, n + 1);
