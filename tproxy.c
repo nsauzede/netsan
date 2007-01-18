@@ -88,7 +88,6 @@ int main( int argc, char *argv[])
 		printf( "Usage : %s cli_host cli_port ser_port [disc=1|0]\n", basename( argv[0]));
 		return -1;
 	}
-	printf( "++remote client=%s port=%d, local server port=%d\n", ch, cp, sp);
 
 #ifdef WIN32
 {
@@ -119,7 +118,7 @@ int main( int argc, char *argv[])
 		socklen_t clen;
 		struct hostent *he;
 		
-		printf( "++accepting..\n");
+		printf( "++accepting.. remote client=%s port=%d, local server port=%d\n", ch, cp, sp);
 		clen = sizeof( csa);
 		css = accept( ss, (struct sockaddr *)&csa, &clen);
 	
@@ -140,7 +139,11 @@ int main( int argc, char *argv[])
 		n = connect( cs, (struct sockaddr *)&ca, sizeof( ca));
 		if (n != 0)
 		{
+#ifdef WIN32
+			printf( "connect returned n=%d : %d\n", n, WSAGetLastError());
+#else
 			perror( "connect");
+#endif
 			exit( 1);
 		}
 
@@ -206,7 +209,14 @@ int main( int argc, char *argv[])
 				{
 					n = read( src, ptr, size);
 					if (n < 0)
+					{
+#ifdef WIN32
+						printf( "read returned n=%d : %d\n", n, WSAGetLastError());
+						break;
+#else
 						perror( "read");
+#endif
+					}
 					else if (n == 0)
 					{
 /*						if (src == css)
