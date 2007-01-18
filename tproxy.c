@@ -22,6 +22,13 @@ fflush(stdout); \
 } \
 while (0)
 #define read(a,b,c) recv(a,b,c,0)
+/* win32 su^H^Hlacks standard socket file descriptor */
+#define close(...) \
+do \
+{ \
+closesocket(__VA_ARGS__); \
+} \
+while (0)
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -144,7 +151,8 @@ int main( int argc, char *argv[])
 #else
 			perror( "connect");
 #endif
-			exit( 1);
+//			exit( 1);
+			goto connect_error;
 		}
 
 		printf( "++connected !!\n");
@@ -290,6 +298,7 @@ int main( int argc, char *argv[])
 //			{//timeout
 //			}
 		}
+connect_error:
 		printf( "++closing client\n");
 		close( css);
 		printf( "++closing server\n");
