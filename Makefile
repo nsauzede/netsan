@@ -14,6 +14,7 @@ CFLAGS=	-Wall -g -O0
 
 ifdef WIN32
 LDFLAGS+= -lwsock32
+CFLAGS+= -mno-cygwin
 endif
 
 
@@ -28,5 +29,5 @@ gproxy:	gproxy.c
 	$(CC) $(GTK_FLAGS) $< -o $@ $(LDFLAGS)
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(TARGET) *.o
 
