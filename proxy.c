@@ -74,11 +74,13 @@ int sp = 5001, cp = 5000;
 
 #ifdef WIN32
 DWORD WINAPI fn( LPVOID opaque)
+{
+	DWORD result = 0;
 #else
 void *fn( void *opaque)
-#endif
 {
 	void * result = 0;
+#endif
 	struct hostent *he;
 	int css = (int)opaque;
 	int pid = getpid();

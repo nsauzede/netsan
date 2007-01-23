@@ -30,6 +30,9 @@ tproxy:	tproxy.o
 
 proxy:	LDFLAGS+=$(THREADF)
 
+proxy:	proxy.o
+	$(CC) -o $@ $^ $(LDFLAGS)
+
 gproxy:	gproxy.c
 	$(CC) $(GTK_FLAGS) $< -o $@ $(LDFLAGS)
 
