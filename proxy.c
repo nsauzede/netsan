@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
+#include <errno.h>
 
 #ifdef WIN32
 #include <conio.h>
@@ -147,7 +149,8 @@ void *fn( void *opaque)
 #endif
 		if (cs)
 			FD_SET( cs, &rfds);
-		FD_SET( css, &rfds);
+		if (css)
+			FD_SET( css, &rfds);
 		tv.tv_sec = 0;
 		tv.tv_usec = 1000;
 	
@@ -173,7 +176,7 @@ void *fn( void *opaque)
 		if (n)
 		{
 //			printf( "Ahh, sg to read..\n");
-			if (cs && FD_ISSET( cs, &rfds))
+			if (cs && css && FD_ISSET( cs, &rfds))
 			{
 				src = cs;
 				dst = css;
@@ -182,7 +185,7 @@ void *fn( void *opaque)
 				ptr++;
 				size--;
 			}
-			else if (FD_ISSET( css, &rfds))
+			else if (css && FD_ISSET( css, &rfds))
 			{
 				src = css;
 				dst = cs;
@@ -200,7 +203,10 @@ void *fn( void *opaque)
 //				printf( "[%d]**select woken by unknown\n", (int)pid);
 //				n = 0;
 				src = -1;
-				dst = css;
+				if (css)
+					dst = css;
+				else
+					dst = cs;
 				buf[0] = '>';
 				ptr++;
 			}
@@ -282,6 +288,11 @@ void *fn( void *opaque)
 							dst = css;
 							col = ccol;
 						}
+						else if (!css)
+						{
+							dst = cs;
+							col = ccol;
+						}
 						else if (buf[0] == '>')
 						{
 							dst = css;
@@ -335,8 +346,11 @@ void *fn( void *opaque)
 		}
 	}
 connect_error:
-	printf( "[%d]++closing client\n", (int)pid);
-	close( css);
+	if (css)
+	{
+		printf( "[%d]++closing client\n", (int)pid);
+		close( css);
+	}
 	if (cs)
 	{
 		printf( "[%d]++closing server\n", (int)pid);
@@ -352,10 +366,47 @@ connect_error:
 	return result;
 }
 
+int isdignum( const char *str)
+{
+	int result = 0;
+	char *endptr;
+	long val;
+
+	errno = 0;
+	val = strtol( str, &endptr, 10);
+
+	if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN))
+      || (errno != 0 && val == 0))
+	{
+		printf( "%s: error somewhere\n", __func__);
+	}
+	else
+	{
+		if (endptr == str)
+		{
+			printf( "%s: no digits found\n", __func__);
+		}
+		else
+		{
+			if (*endptr != '\0')
+			{
+				printf( "%s: trailing garbage\n", __func__);
+			}
+			else
+			{
+				printf( "%s: [%s] is a genuine dignum : %ld\n", __func__, str, val);
+				result = 1;
+			}
+		}
+	}
+
+	return result;
+}
+
 int main( int argc, char *argv[])
 {
 	int css, ss;
-	int sp = 5001;
+	int sp = 0;
 	struct sockaddr_in csa, sa;
 	int arg = 1, on;
 	
@@ -387,32 +438,46 @@ int main( int argc, char *argv[])
 #endif
 	if (argc > arg)
 	{
-		sscanf( argv[arg++], "%d", &sp);
-		init = 1;
-		if (argc > arg)
+		ch = argv[arg++];
+		if (isdignum( ch))
 		{
-			ch = argv[arg++];
-//			printf( "looking up cp/disc\n");
-			while (argc > arg)
+			ch = 0;
+			sscanf( ch, "%d", &sp);
+			init = 1;
+			if (argc > arg)
 			{
-				if (!strcmp( argv[arg], "disc"))
+				ch = argv[arg++];
+//				printf( "looking up cp/disc\n");
+				while (argc > arg)
 				{
-					disc = 1;
-					arg++;
+					if (!strcmp( argv[arg], "disc"))
+					{
+						disc = 1;
+						arg++;
+					}
+					else
+					{
+						sscanf( argv[arg++], "%d", &cp);
+						break;
+					}
 				}
-				else
-				{
-					sscanf( argv[arg++], "%d", &cp);
-					break;
-				}
+				if (!cp)
+					cp = sp;
 			}
-			if (!cp)
-				cp = sp;
+		}
+		else
+		{
+			if (argc > arg)
+			{
+				sscanf( argv[arg++], "%d", &cp);
+				init = 1;
+			}
 		}
 	}
+	printf( "testing init\n");
 	if (!init)
 	{
-		printf( "Usage : %s local_port [remote_host [remote_port=local_port] [disc]]\n", basename( argv[0]));
+		printf( "Usage : %s [local_port [remote_host [remote_port=local_port] [disc]] | remote_host remote_port]\n", basename( argv[0]));
 		return -1;
 	}
 
@@ -429,6 +494,10 @@ int main( int argc, char *argv[])
         }
 }
 #endif
+
+	if (sp)
+	{
+		printf( "server mode\n");
 	ss = socket( PF_INET, SOCK_STREAM, 0);
 	memset( &sa, 0, sizeof( sa));
 	sa.sin_addr.s_addr = INADDR_ANY;
@@ -464,6 +533,12 @@ int main( int argc, char *argv[])
 	}
 	printf( "++closing listening server\n");
 	close( ss);
+	}
+	else
+	{
+		printf( "telnet mode - server=[%s] port=%d\n", ch, cp);
+		fn( (void *)0);
+	}
 	
 	return 0;
 }
