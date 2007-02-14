@@ -69,8 +69,8 @@ void asciify( char *ptr, int n)
 int end = 0;
 int init = 0;
 int disc = 0;
-char *ch = "127.0.0.1";
-int sp = 5001, cp = 5000;
+char *ch = 0;
+int cp = 0;
 
 #ifdef WIN32
 DWORD WINAPI fn( LPVOID opaque)
@@ -85,11 +85,13 @@ void *fn( void *opaque)
 	int css = (int)opaque;
 	int pid = getpid();
 
-	int cs, max;
+	int cs = 0, max;
 	struct sockaddr_in ca;
 	int cscol = 32, ccol = 31;
 	int n;
 
+	if (ch)
+	{
 	printf( "[%d]++connecting server..\n", (int)pid);
 	cs = socket( PF_INET, SOCK_STREAM, 0);
 	memset( &ca, 0, sizeof( ca));
@@ -118,6 +120,9 @@ void *fn( void *opaque)
 	max = cs;
 	if (css > max)
 		max = css;
+	}
+	else
+		printf( "[%d] LOCAL MODE\n", (int)pid);
 	max++;
 	while (1)
 	{
@@ -132,7 +137,8 @@ void *fn( void *opaque)
 #ifndef WIN32
 		FD_SET( 0, &rfds);
 #endif
-		FD_SET( cs, &rfds);
+		if (cs)
+			FD_SET( cs, &rfds);
 		FD_SET( css, &rfds);
 		tv.tv_sec = 0;
 		tv.tv_usec = 1000;
@@ -148,7 +154,7 @@ void *fn( void *opaque)
 		}
 		else if (n)
 		{
-			if (FD_ISSET( cs, &rfds))
+			if (cs && FD_ISSET( cs, &rfds))
 			{
 				src = cs;
 				dst = css;
@@ -265,7 +271,8 @@ connect_error:
 	printf( "[%d]++closing client\n", (int)pid);
 	close( css);
 	printf( "[%d]++closing server\n", (int)pid);
-	close( cs);
+	if (cs)
+		close( cs);
 	return result;
 }
 
@@ -276,27 +283,30 @@ int main( int argc, char *argv[])
 	struct sockaddr_in csa, sa;
 	int arg = 1, on;
 	
-        /* args : client_host client_port serveur_port */
 	if (argc > arg)
 	{
-		ch = argv[arg++];
+		sscanf( argv[arg++], "%d", &sp);
+		init = 1;
 		if (argc > arg)
 		{
-			sscanf( argv[arg++], "%d", &cp);
-			if (argc > arg)
+			ch = argv[arg++];
+			while (argc > arg)
 			{
-				sscanf( argv[arg++], "%d", &sp);
-				init = 1;
-				if (argc > arg)
+				if (!strcmp( argv[arg++], "disc"))
+					disc = 1;
+				else
 				{
-					sscanf( argv[arg++], "%d", &disc);
+					sscanf( argv[arg++], "%d", &cp);
+					break;
 				}
 			}
+			if (!cp)
+				cp = sp;
 		}
 	}
 	if (!init)
 	{
-		printf( "Usage : %s cli_host cli_port ser_port [disc=1|0]\n", basename( argv[0]));
+		printf( "Usage : %s local_port [remote_host [remote_port=local_port] [disc]]\n", basename( argv[0]));
 		return -1;
 	}
 
@@ -329,7 +339,10 @@ int main( int argc, char *argv[])
 		pthread_t tid;
 		socklen_t clen;
 		
-		printf( "++accepting.. local server port=%d\n", sp);
+		printf( "++accepting.. local server port=%d", sp);
+		if (ch)
+			printf( " - will proxy to %s:%d", ch, cp);
+		printf( "\n");
 		clen = sizeof( csa);
 		css = accept( ss, (struct sockaddr *)&csa, &clen);
 	
