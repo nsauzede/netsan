@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #ifdef WIN32
+#include <conio.h>
 #include <winsock2.h>
 #define basename(foo)	foo	/* win32 su^H^Hlacks basename support */
 #define socklen_t int
@@ -71,6 +72,7 @@ int init = 0;
 int disc = 0;
 char *ch = 0;
 int cp = 0;
+int istty = 0;
 
 #ifdef WIN32
 DWORD WINAPI fn( LPVOID opaque)
@@ -156,6 +158,39 @@ void *fn( void *opaque)
 #ifdef WIN32
 		else if (!n)
 		{//timeout : let's look at stdin
+/*
+			ReadConsoleInput()
+			SetConsoleMode()
+			ReadConsole()
+			ReadFile()
+			WaitForMultipleObjects( 1);
+			GetNumberOfConsoleInputEvents()
+			PeekConsoleInput()
+*/
+/*			DWORD count = 0;
+			//if (PeekConsoleInput( GetStdHandle(STD_INPUT_HANDLE), NULL, 0, &count))
+			if (GetNumberOfConsoleInputEvents( GetStdHandle(STD_INPUT_HANDLE), &count))
+			{
+				printf( "PeekConsoleInput returned TRUE : count=%d\n", (int)count);
+			}
+			else
+			{
+//				printf( "PeekConsoleInput returned FALSE\n");
+			}
+*/
+			if (kbhit())
+			{
+//				printf( "kbhit !!!!\n");
+				ptr = buf;
+				*ptr = '>';
+				gets( ptr + 1);
+				strcat( buf, "\n");
+				n = strlen( buf);
+			}
+			else
+			{
+//				printf( "NO kbhit...\n");
+			}
 		}
 #endif
 		if (n)
@@ -185,13 +220,16 @@ void *fn( void *opaque)
 			}
 			else
 			{
-				printf( "[%d]**select woken by unknown\n", (int)pid);
-				n = 0;
+//				printf( "[%d]**select woken by unknown\n", (int)pid);
+//				n = 0;
+				src = -1;
+				dst = css;
 			}
 	
-			if (n)
+			if (src >= 0)
 			{
 				n = read( src, ptr, size);
+			}
 				if (n < 0)
 				{
 #ifdef WIN32
@@ -209,9 +247,10 @@ void *fn( void *opaque)
 				}
 				else
 				{
+//					printf( "positive size (n=%d)\n", n);
 					if (n > size)
 						n = size;
-					if (src == 0)
+					if (src <= 0)
 					{
 						if (buf[0] == '<')
 						{
@@ -229,7 +268,7 @@ void *fn( void *opaque)
 						}
 						else
 						{
-//							printf( "* inspecting input.. ptr=%s\n", ptr);
+							printf( "* inspecting input.. ptr=%s\n", ptr);
 							if (!strncmp( ptr, "disc", 4))
 							{
 								disc = !disc;
@@ -254,29 +293,48 @@ void *fn( void *opaque)
 					}
 					if (n)
 					{
-						if (!disc || !src)
+						if (!disc && (src <= 0))
+						{
+//							printf( "Sending n=%d ptr=[%s] to dst=%d cs=%d css=%d..\n", n, ptr, dst, cs, css);
 							send( dst, ptr, n, 0);
-						if (src != 0)
+						}
+						if (src > 0)
 						{
 							asciify( buf, n + 1);
 							if (col)
-								printf( "[%d]\x1b[01;%02dm%s\x1b[00m", (int)pid, col, buf);
+							{
+								printf( "[%d]", (int)pid);
+								if (!istty)
+									printf( "\x1b[01;%02dm", col);
+								printf( "%s", buf);
+								if (!istty)
+									printf( "\x1b[00m");
+							}
 							else
-								printf( "[%d]\x1b[00m%s\x1b[00m", (int)pid, buf);
-							printf( "\x1b[m");
+							{
+								printf( "[%d]", (int)pid);
+								if (!istty)
+									printf( "\x1b[00m");
+								printf( "%s", buf);
+								if (!istty)
+									printf( "\x1b[00m");
+							}
+							if (!istty)
+								printf( "\x1b[m");
 							fflush( stdout);
 						}
 					}
 				}
-			}
 		}
 	}
 connect_error:
 	printf( "[%d]++closing client\n", (int)pid);
 	close( css);
-	printf( "[%d]++closing server\n", (int)pid);
 	if (cs)
+	{
+		printf( "[%d]++closing server\n", (int)pid);
 		close( cs);
+	}
 	return result;
 }
 
@@ -287,6 +345,32 @@ int main( int argc, char *argv[])
 	struct sockaddr_in csa, sa;
 	int arg = 1, on;
 	
+#ifdef WIN32
+//	HandlerRoutine
+	DWORD mode;
+//	unsigned char buf[100];
+//	DWORD count;
+	if (GetConsoleMode( GetStdHandle(STD_INPUT_HANDLE), &mode))
+	{
+		printf( "GetConsoleMode returned TRUE : mode=%08lx\n", mode);
+		istty = 1;
+	}
+	else
+	{
+		printf( "GetConsoleMode returned FALSE\n");
+		istty = 0;
+	}
+/*
+	if (ReadConsole( GetStdHandle(STD_INPUT_HANDLE), buf, sizeof( buf), &count, NULL))
+	{
+		printf( "ReadConsole returned TRUE : count=%08lx\n", count);
+	}
+	else
+	{
+		printf( "ReadConsole returned FALSE\n");
+	}
+*/
+#endif
 	if (argc > arg)
 	{
 		sscanf( argv[arg++], "%d", &sp);
