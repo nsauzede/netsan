@@ -150,10 +150,17 @@ void *fn( void *opaque)
 		{
 			perror( "select");
 			printf( "[%d]leaving because select error\n", (int)pid);
+			n = 0;
 			break;
 		}
-		else if (n)
+#ifdef WIN32
+		else if (!n)
+		{//timeout : let's look at stdin
+		}
+#endif
+		if (n)
 		{
+			printf( "Ahh, sg to read..\n");
 			if (cs && FD_ISSET( cs, &rfds))
 			{
 				src = cs;
@@ -263,9 +270,6 @@ void *fn( void *opaque)
 				}
 			}
 		}
-//		else
-//		{//timeout
-//		}
 	}
 connect_error:
 	printf( "[%d]++closing client\n", (int)pid);
@@ -290,10 +294,14 @@ int main( int argc, char *argv[])
 		if (argc > arg)
 		{
 			ch = argv[arg++];
+			printf( "looking up cp/disc\n");
 			while (argc > arg)
 			{
-				if (!strcmp( argv[arg++], "disc"))
+				if (!strcmp( argv[arg], "disc"))
+				{
 					disc = 1;
+					arg++;
+				}
 				else
 				{
 					sscanf( argv[arg++], "%d", &cp);
