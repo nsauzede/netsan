@@ -131,7 +131,7 @@ void *fn( void *opaque)
 	if (css > max)
 		max = css;
 	max++;
-	printf( "max=%d\n", max);
+//	printf( "max=%d\n", max);
 	while (!local_end)
 	{
 #define MAX_BUF	(400 * 1024)
@@ -172,7 +172,7 @@ void *fn( void *opaque)
 #endif
 		if (n)
 		{
-			printf( "Ahh, sg to read..\n");
+//			printf( "Ahh, sg to read..\n");
 			if (cs && FD_ISSET( cs, &rfds))
 			{
 				src = cs;
@@ -207,13 +207,13 @@ void *fn( void *opaque)
 	
 			if (src >= 0)
 			{
-				printf( "reading from src=%d\n", src);
+//				printf( "reading from src=%d\n", src);
 				n = read( src, ptr, size);
 			}
 #ifdef WIN32
 			else
 			{
-				printf( "kbhit !!!!\n");
+//				printf( "kbhit !!!!\n");
 				gets( ptr);
 				strcat( ptr, "\n");
 				n = strlen( ptr);
@@ -236,7 +236,7 @@ void *fn( void *opaque)
 				}
 				else
 				{
-					printf( "positive size (n=%d) buf=[%s]\n", n, buf);
+//					printf( "positive size (n=%d) buf=[%s]\n", n, buf);
 					if (n > size)
 						n = size;
 					if (src <= 0)
