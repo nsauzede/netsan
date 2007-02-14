@@ -50,9 +50,12 @@ while (0)
 #define DEF_C_PORT	5001
 #define BUF_SIZE	(10 * 1024)
 #define MAX_HOST	64
-#define CMD_PROXY       "proxy"         // s_host s_port [c_port]
-#define CMD_QUIT        "quit"          // client
-#define CMD_EXIT        "exit"          // app
+#define CMD_PRL		"\\"
+#define CMD_HELP	CMD_PRL "help"		// help
+#define CMD_PROXY	CMD_PRL "proxy"		// s_host s_port [c_port]
+#define CMD_DISC	CMD_PRL "disc"		// disc
+#define CMD_QUIT	CMD_PRL "quit"		// client
+#define CMD_EXIT	CMD_PRL "exit"		// app
 
 void asciify( char *ptr, int n)
 {
@@ -91,42 +94,45 @@ void *fn( void *opaque)
 	struct sockaddr_in ca;
 	int cscol = 32, ccol = 31;
 	int n;
+	int local_end = 0;
+	int kill_global = 0;
 
 	if (ch)
 	{
-	printf( "[%d]++connecting server..\n", (int)pid);
-	cs = socket( PF_INET, SOCK_STREAM, 0);
-	memset( &ca, 0, sizeof( ca));
-	he = gethostbyname( ch);
-	if (he)
-	{
-		memcpy( &ca.sin_addr.s_addr, he->h_addr, sizeof( ca.sin_addr.s_addr));
-	}
-	else
-	ca.sin_addr.s_addr = inet_addr( ch);
-	ca.sin_port = htons( cp);
-	ca.sin_family = AF_INET;
-	n = connect( cs, (struct sockaddr *)&ca, sizeof( ca));
-	if (n != 0)
-	{
+		printf( "[%d]++connecting server..\n", (int)pid);
+		cs = socket( PF_INET, SOCK_STREAM, 0);
+		memset( &ca, 0, sizeof( ca));
+		he = gethostbyname( ch);
+		if (he)
+		{
+			memcpy( &ca.sin_addr.s_addr, he->h_addr, sizeof( ca.sin_addr.s_addr));
+		}
+		else
+			ca.sin_addr.s_addr = inet_addr( ch);
+		ca.sin_port = htons( cp);
+		ca.sin_family = AF_INET;
+		n = connect( cs, (struct sockaddr *)&ca, sizeof( ca));
+		if (n != 0)
+		{
 #ifdef WIN32
-		printf( "[%d]connect returned n=%d : %d\n", (int)pid, n, WSAGetLastError());
+			printf( "[%d]connect returned n=%d : %d\n", (int)pid, n, WSAGetLastError());
 #else
-		perror( "connect");
+			perror( "connect");
 #endif
-//		exit( 1);
-		goto connect_error;
-	}
+//			exit( 1);
+			goto connect_error;
+		}
 
-	printf( "[%d]++connected !!\n", (int)pid);
-	max = cs;
+		printf( "[%d]++connected !!\n", (int)pid);
+		max = cs;
 	}
 	else
 		printf( "[%d] LOCAL MODE\n", (int)pid);
 	if (css > max)
 		max = css;
 	max++;
-	while (1)
+	printf( "max=%d\n", max);
+	while (!local_end)
 	{
 #define MAX_BUF	(400 * 1024)
 		char buf[MAX_BUF + 2], *ptr;
@@ -147,7 +153,9 @@ void *fn( void *opaque)
 	
 		ptr = buf;
 		size = sizeof( buf);
+//		printf( "selecting..\n");
 		n = select( max, &rfds, NULL, NULL, &tv);
+//		printf( "select returned %d\n", n);
 		if (n == SOCKET_ERROR)
 		{
 			perror( "select");
@@ -158,44 +166,13 @@ void *fn( void *opaque)
 #ifdef WIN32
 		else if (!n)
 		{//timeout : let's look at stdin
-/*
-			ReadConsoleInput()
-			SetConsoleMode()
-			ReadConsole()
-			ReadFile()
-			WaitForMultipleObjects( 1);
-			GetNumberOfConsoleInputEvents()
-			PeekConsoleInput()
-*/
-/*			DWORD count = 0;
-			//if (PeekConsoleInput( GetStdHandle(STD_INPUT_HANDLE), NULL, 0, &count))
-			if (GetNumberOfConsoleInputEvents( GetStdHandle(STD_INPUT_HANDLE), &count))
-			{
-				printf( "PeekConsoleInput returned TRUE : count=%d\n", (int)count);
-			}
-			else
-			{
-//				printf( "PeekConsoleInput returned FALSE\n");
-			}
-*/
 			if (kbhit())
-			{
-//				printf( "kbhit !!!!\n");
-				ptr = buf;
-				*ptr = '>';
-				gets( ptr + 1);
-				strcat( buf, "\n");
-				n = strlen( buf);
-			}
-			else
-			{
-//				printf( "NO kbhit...\n");
-			}
+				n = 1;
 		}
 #endif
 		if (n)
 		{
-//			printf( "Ahh, sg to read..\n");
+			printf( "Ahh, sg to read..\n");
 			if (cs && FD_ISSET( cs, &rfds))
 			{
 				src = cs;
@@ -224,12 +201,24 @@ void *fn( void *opaque)
 //				n = 0;
 				src = -1;
 				dst = css;
+				buf[0] = '>';
+				ptr++;
 			}
 	
 			if (src >= 0)
 			{
+				printf( "reading from src=%d\n", src);
 				n = read( src, ptr, size);
 			}
+#ifdef WIN32
+			else
+			{
+				printf( "kbhit !!!!\n");
+				gets( ptr);
+				strcat( ptr, "\n");
+				n = strlen( ptr);
+			}
+#endif
 				if (n < 0)
 				{
 #ifdef WIN32
@@ -247,17 +236,51 @@ void *fn( void *opaque)
 				}
 				else
 				{
-//					printf( "positive size (n=%d)\n", n);
+					printf( "positive size (n=%d) buf=[%s]\n", n, buf);
 					if (n > size)
 						n = size;
 					if (src <= 0)
 					{
-						if (buf[0] == '<')
+						if (buf[0] == '\\')
 						{
-							dst = cs;
-							col = cscol;
-							ptr++;
-							n--;
+							printf( "* inspecting input.. ptr=[%s]\n", ptr);
+							if (!strncmp( ptr, CMD_DISC, strlen( CMD_DISC)))
+							{
+								disc = !disc;
+								printf( "* connections %s\n", disc ? "disabled" : "enabled");
+							}
+							else if (!strncmp( ptr, CMD_QUIT, strlen( CMD_QUIT)))
+							{
+								local_end = 1;
+								break;
+							}
+							else if (!strncmp( ptr, CMD_EXIT, strlen( CMD_EXIT)))
+							{
+								local_end = 1;
+								kill_global = 1;
+								break;
+							}
+							else if (!strncmp( ptr, CMD_HELP, strlen( CMD_HELP)))
+							{
+								printf( "%s\tget help about available commands\n", CMD_HELP);
+								printf( "%s\t[dis]connect client and server\n", CMD_DISC);
+								printf( "%s\tterminate current client connection\n", CMD_QUIT);
+								printf( "%s\tterminate current client connection\n", CMD_EXIT);
+								if (cs)
+								{
+									printf( "<'msg'\tsend 'msg' to server\n");
+									printf( ">'msg'\tsend 'msg' to client\n");
+								}
+								else
+									printf( "'msg'\tsend 'msg' to client\n");
+								printf( "\n");
+							}
+							n = 0;	// don't write anything afterwards
+						}
+						else if (!cs)
+						{
+							dst = css;
+							col = ccol;
 						}
 						else if (buf[0] == '>')
 						{
@@ -266,35 +289,18 @@ void *fn( void *opaque)
 							ptr++;
 							n--;
 						}
-						else
+						else if (buf[0] == '<')
 						{
-							printf( "* inspecting input.. ptr=%s\n", ptr);
-							if (!strncmp( ptr, "disc", 4))
-							{
-								disc = !disc;
-								printf( "* connections %s\n", disc ? "disabled" : "enabled");
-							}
-							else if (!strncmp( ptr, "quit", 4))
-							{
-								end = 1;
-								break;
-							}
-							else if (!strncmp( ptr, "help", 4))
-							{
-								printf( "help\tget help about available commands\n");
-								printf( "disc\t[dis]connect client and server\n");
-								printf( "<'msg'\tsend 'msg' to server\n");
-								printf( ">'msg'\tsend 'msg' to client\n");
-								printf( "quit\tterminate connections and quit program\n");
-								printf( "\n");
-							}
-							n = 0;	// don't write anything afterwards
+							dst = cs;
+							col = cscol;
+							ptr++;
+							n--;
 						}
 					}
 					if (n)
 					{
 //						printf( "disc=%d src=%d\n", disc, src);
-						if (!disc && (src != 0))
+						if (!disc /*&& (src != 0)*/)
 						{
 //							printf( "Sending n=%d ptr=[%s] to dst=%d cs=%d css=%d..\n", n, ptr, dst, cs, css);
 							send( dst, ptr, n, 0);
@@ -336,6 +342,13 @@ connect_error:
 		printf( "[%d]++closing server\n", (int)pid);
 		close( cs);
 	}
+
+	if (kill_global)
+	{
+		printf( "kill global..\n");
+		end = 1;
+	}
+
 	return result;
 }
 
