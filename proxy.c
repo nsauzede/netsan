@@ -293,7 +293,8 @@ void *fn( void *opaque)
 					}
 					if (n)
 					{
-						if (!disc && (src <= 0))
+//						printf( "disc=%d src=%d\n", disc, src);
+						if (!disc && (src != 0))
 						{
 //							printf( "Sending n=%d ptr=[%s] to dst=%d cs=%d css=%d..\n", n, ptr, dst, cs, css);
 							send( dst, ptr, n, 0);
