@@ -352,12 +352,12 @@ int main( int argc, char *argv[])
 //	DWORD count;
 	if (GetConsoleMode( GetStdHandle(STD_INPUT_HANDLE), &mode))
 	{
-		printf( "GetConsoleMode returned TRUE : mode=%08lx\n", mode);
+//		printf( "GetConsoleMode returned TRUE : mode=%08lx\n", mode);
 		istty = 1;
 	}
 	else
 	{
-		printf( "GetConsoleMode returned FALSE\n");
+//		printf( "GetConsoleMode returned FALSE\n");
 		istty = 0;
 	}
 /*
