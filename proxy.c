@@ -85,7 +85,7 @@ void *fn( void *opaque)
 	int css = (int)opaque;
 	int pid = getpid();
 
-	int cs = 0, max;
+	int cs = 0, max = 0;
 	struct sockaddr_in ca;
 	int cscol = 32, ccol = 31;
 	int n;
@@ -118,11 +118,11 @@ void *fn( void *opaque)
 
 	printf( "[%d]++connected !!\n", (int)pid);
 	max = cs;
-	if (css > max)
-		max = css;
 	}
 	else
 		printf( "[%d] LOCAL MODE\n", (int)pid);
+	if (css > max)
+		max = css;
 	max++;
 	while (1)
 	{
@@ -160,7 +160,7 @@ void *fn( void *opaque)
 #endif
 		if (n)
 		{
-			printf( "Ahh, sg to read..\n");
+//			printf( "Ahh, sg to read..\n");
 			if (cs && FD_ISSET( cs, &rfds))
 			{
 				src = cs;
