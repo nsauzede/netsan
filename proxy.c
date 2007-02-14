@@ -378,7 +378,7 @@ int main( int argc, char *argv[])
 		if (argc > arg)
 		{
 			ch = argv[arg++];
-			printf( "looking up cp/disc\n");
+//			printf( "looking up cp/disc\n");
 			while (argc > arg)
 			{
 				if (!strcmp( argv[arg], "disc"))
