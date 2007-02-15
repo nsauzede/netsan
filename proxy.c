@@ -58,6 +58,7 @@ while (0)
 #define CMD_DISC	CMD_PRL "disc"		// disc
 #define CMD_QUIT	CMD_PRL "quit"		// client
 #define CMD_EXIT	CMD_PRL "exit"		// app
+#define ARG_DISC	"-disc"
 
 void asciify( char *ptr, int n)
 {
@@ -90,7 +91,7 @@ void *fn( void *opaque)
 #endif
 	struct hostent *he;
 	int css = (int)opaque;
-	int pid = getpid();
+//	int pid = getpid();
 
 	int cs = 0, max = 0;
 	struct sockaddr_in ca;
@@ -101,7 +102,8 @@ void *fn( void *opaque)
 
 	if (ch)
 	{
-		printf( "[%d]++connecting server..\n", (int)pid);
+//		printf( "[%d]++connecting server..\n", (int)pid);
+		printf( "++connecting server..\n");
 		cs = socket( PF_INET, SOCK_STREAM, 0);
 		memset( &ca, 0, sizeof( ca));
 		he = gethostbyname( ch);
@@ -117,19 +119,23 @@ void *fn( void *opaque)
 		if (n != 0)
 		{
 #ifdef WIN32
-			printf( "[%d]connect returned n=%d : %d\n", (int)pid, n, WSAGetLastError());
+//			printf( "[%d]connect returned n=%d : %d\n", (int)pid, n, WSAGetLastError());
+			printf( "++connect returned n=%d : %d\n", n, WSAGetLastError());
 #else
-			perror( "connect");
+			perror( "++connect");
 #endif
 //			exit( 1);
 			goto connect_error;
 		}
 
-		printf( "[%d]++connected !!\n", (int)pid);
+//		printf( "[%d]++connected !!\n", (int)pid);
+		printf( "++connected !!\n");
 		max = cs;
 	}
 	else
-		printf( "[%d] LOCAL MODE\n", (int)pid);
+//		printf( "[%d] LOCAL MODE\n", (int)pid);
+		printf( "++LOCAL MODE\n");
+//	printf( "++ch=%p css=%d cs=%d\n", ch, css, cs);
 	if (css > max)
 		max = css;
 	max++;
@@ -142,6 +148,13 @@ void *fn( void *opaque)
 		struct timeval tv;
 		int src, dst;
 		int col = 0, size;
+		static int header = 1;
+
+		if (!(css && cs) && header && istty)
+		{
+			printf( ">");fflush( stdout);
+			header = 0;
+		}
 
 		FD_ZERO( &rfds);
 #ifndef WIN32
@@ -161,8 +174,9 @@ void *fn( void *opaque)
 //		printf( "select returned %d\n", n);
 		if (n == SOCKET_ERROR)
 		{
-			perror( "select");
-			printf( "[%d]leaving because select error\n", (int)pid);
+			perror( "++select");
+//			printf( "[%d]leaving because select error\n", (int)pid);
+			printf( "++leaving because select error\n");
 			n = 0;
 			break;
 		}
@@ -175,8 +189,8 @@ void *fn( void *opaque)
 #endif
 		if (n)
 		{
-//			printf( "Ahh, sg to read..\n");
-			if (cs && css && FD_ISSET( cs, &rfds))
+//			printf( "Ahh, sg to read.. cs=%d css=%d\n", cs, css);
+			if (cs && FD_ISSET( cs, &rfds))
 			{
 				src = cs;
 				dst = css;
@@ -225,141 +239,150 @@ void *fn( void *opaque)
 				n = strlen( ptr);
 			}
 #endif
-				if (n < 0)
-				{
+			if (n < 0)
+			{
 #ifdef WIN32
-					printf( "[%d]read returned n=%d : %d\n", (int)pid, n, WSAGetLastError());
-					break;
+//				printf( "[%d]read returned n=%d : %d\n", (int)pid, n, WSAGetLastError());
+				printf( "++read returned n=%d : %d\n", n, WSAGetLastError());
+				break;
 #else
-					perror( "read");
+				perror( "++read");
 #endif
-				}
-				else if (n == 0)
+			}
+			else if (n == 0)
+			{
+/*				if (src == css)
+					end = 1;*/
+				break;
+			}
+			else
+			{
+//				printf( "positive size (n=%d) buf=[%s]\n", n, buf);
+				if (n > size)
+					n = size;
+				if (src <= 0)
 				{
-/*					if (src == css)
-						end = 1;*/
-					break;
-				}
-				else
-				{
-//					printf( "positive size (n=%d) buf=[%s]\n", n, buf);
-					if (n > size)
-						n = size;
-					if (src <= 0)
+					if (buf[0] == '\\')
 					{
-						if (buf[0] == '\\')
+//						printf( "* inspecting input.. ptr=[%s]\n", ptr);
+						if (!strncmp( ptr, CMD_DISC, strlen( CMD_DISC)))
 						{
-							printf( "* inspecting input.. ptr=[%s]\n", ptr);
-							if (!strncmp( ptr, CMD_DISC, strlen( CMD_DISC)))
+							disc = !disc;
+							printf( "++connections %s\n", disc ? "disabled" : "enabled");
+						}
+						else if (!strncmp( ptr, CMD_QUIT, strlen( CMD_QUIT)))
+						{
+							local_end = 1;
+							break;
+						}
+						else if (!strncmp( ptr, CMD_EXIT, strlen( CMD_EXIT)))
+						{
+							local_end = 1;
+							kill_global = 1;
+							break;
+						}
+						else if (!strncmp( ptr, CMD_HELP, strlen( CMD_HELP)))
+						{
+							printf( "++%s\tget help about available commands\n", CMD_HELP);
+							printf( "++%s\t[dis]connect client and server\n", CMD_DISC);
+							printf( "++%s\tterminate current client connection\n", CMD_QUIT);
+							printf( "++%s\tterminate current client connection\n", CMD_EXIT);
+							if (cs && css)
 							{
-								disc = !disc;
-								printf( "* connections %s\n", disc ? "disabled" : "enabled");
-							}
-							else if (!strncmp( ptr, CMD_QUIT, strlen( CMD_QUIT)))
-							{
-								local_end = 1;
-								break;
-							}
-							else if (!strncmp( ptr, CMD_EXIT, strlen( CMD_EXIT)))
-							{
-								local_end = 1;
-								kill_global = 1;
-								break;
-							}
-							else if (!strncmp( ptr, CMD_HELP, strlen( CMD_HELP)))
-							{
-								printf( "%s\tget help about available commands\n", CMD_HELP);
-								printf( "%s\t[dis]connect client and server\n", CMD_DISC);
-								printf( "%s\tterminate current client connection\n", CMD_QUIT);
-								printf( "%s\tterminate current client connection\n", CMD_EXIT);
-								if (cs)
-								{
-									printf( "<'msg'\tsend 'msg' to server\n");
-									printf( ">'msg'\tsend 'msg' to client\n");
-								}
-								else
-									printf( "'msg'\tsend 'msg' to client\n");
-								printf( "\n");
-							}
-							n = 0;	// don't write anything afterwards
-						}
-						else if (!cs)
-						{
-							dst = css;
-							col = ccol;
-						}
-						else if (!css)
-						{
-							dst = cs;
-							col = ccol;
-						}
-						else if (buf[0] == '>')
-						{
-							dst = css;
-							col = ccol;
-							ptr++;
-							n--;
-						}
-						else if (buf[0] == '<')
-						{
-							dst = cs;
-							col = cscol;
-							ptr++;
-							n--;
-						}
-					}
-					if (n)
-					{
-//						printf( "disc=%d src=%d\n", disc, src);
-						if (!disc /*&& (src != 0)*/)
-						{
-//							printf( "Sending n=%d ptr=[%s] to dst=%d cs=%d css=%d..\n", n, ptr, dst, cs, css);
-							send( dst, ptr, n, 0);
-						}
-						if (src > 0)
-						{
-							asciify( buf, n + 1);
-							if (col)
-							{
-								printf( "[%d]", (int)pid);
-								if (!istty)
-									printf( "\x1b[01;%02dm", col);
-								printf( "%s", buf);
-								if (!istty)
-									printf( "\x1b[00m");
+								printf( "++<'msg'\tsend 'msg' to server\n");
+								printf( "++>'msg'\tsend 'msg' to client\n");
 							}
 							else
-							{
-								printf( "[%d]", (int)pid);
-								if (!istty)
-									printf( "\x1b[00m");
-								printf( "%s", buf);
-								if (!istty)
-									printf( "\x1b[00m");
-							}
-							if (!istty)
-								printf( "\x1b[m");
-							fflush( stdout);
+								printf( "++'msg'\tsend 'msg' to client\n");
+							printf( "++\n");
 						}
+						n = 0;	// don't write anything afterwards
+					}
+					else if (!cs)
+					{
+						dst = css;
+						col = ccol;
+					}
+					else if (!css)
+					{
+						dst = cs;
+						col = ccol;
+					}
+					else if (buf[0] == '>')
+					{
+						dst = css;
+						col = ccol;
+						ptr++;
+						n--;
+					}
+					else if (buf[0] == '<')
+					{
+						dst = cs;
+						col = cscol;
+						ptr++;
+						n--;
 					}
 				}
+				if (n)
+				{
+//					printf( "disc=%d src=%d\n", disc, src);
+					if (!disc && (src <= 0) && (dst > 0))
+					{
+//						printf( "Sending n=%d ptr=[%s] to dst=%d cs=%d css=%d..\n", n, ptr, dst, cs, css);
+						send( dst, ptr, n, 0);
+					}
+					if (src > 0)
+					{
+						asciify( buf, n + 1);
+						if (!istty)
+							ptr = buf + 1;
+						else
+							ptr = buf;
+						printf( "\r");
+						if (col)
+						{
+//							printf( "[%d]", (int)pid);
+							if (!istty)
+								printf( "\x1b[01;%02dm", col);
+							printf( "%s", ptr);
+							if (!istty)
+								printf( "\x1b[00m");
+						}
+						else
+						{
+//							printf( "[%d]", (int)pid);
+							if (!istty)
+								printf( "\x1b[00m");
+							printf( "%s", ptr);
+							if (!istty)
+								printf( "\x1b[00m");
+						}
+						if (!istty)
+							printf( "\x1b[m");
+						fflush( stdout);
+					}
+				}
+						header = 1;
+			}
 		}
 	}
 connect_error:
 	if (css)
 	{
-		printf( "[%d]++closing client\n", (int)pid);
+//		printf( "[%d]++closing client\n", (int)pid);
+		printf( "++closing client\n");
 		close( css);
 	}
 	if (cs)
 	{
-		printf( "[%d]++closing server\n", (int)pid);
+//		printf( "[%d]++closing server\n", (int)pid);
+		printf( "++closing server\n");
 		close( cs);
 	}
 
 	if (kill_global)
 	{
-		printf( "kill global..\n");
+		printf( "++kill global..\n");
 		end = 1;
 	}
 
@@ -384,17 +407,17 @@ int isdignum( const char *str)
 	{
 		if (endptr == str)
 		{
-			printf( "%s: no digits found\n", __func__);
+//			printf( "%s: no digits found\n", __func__);
 		}
 		else
 		{
 			if (*endptr != '\0')
 			{
-				printf( "%s: trailing garbage\n", __func__);
+//				printf( "%s: trailing garbage\n", __func__);
 			}
 			else
 			{
-				printf( "%s: [%s] is a genuine dignum : %ld\n", __func__, str, val);
+//				printf( "%s: [%s] is a genuine dignum : %ld\n", __func__, str, val);
 				result = 1;
 			}
 		}
@@ -441,8 +464,8 @@ int main( int argc, char *argv[])
 		ch = argv[arg++];
 		if (isdignum( ch))
 		{
-			ch = 0;
 			sscanf( ch, "%d", &sp);
+			ch = 0;
 			init = 1;
 			if (argc > arg)
 			{
@@ -450,7 +473,7 @@ int main( int argc, char *argv[])
 //				printf( "looking up cp/disc\n");
 				while (argc > arg)
 				{
-					if (!strcmp( argv[arg], "disc"))
+					if (!strcmp( argv[arg], ARG_DISC))
 					{
 						disc = 1;
 						arg++;
@@ -474,10 +497,14 @@ int main( int argc, char *argv[])
 			}
 		}
 	}
-	printf( "testing init\n");
+//	printf( "testing init\n");
 	if (!init)
 	{
-		printf( "Usage : %s [local_port [remote_host [remote_port=local_port] [disc]] | remote_host remote_port]\n", basename( argv[0]));
+		printf( "Usage :\n");
+		printf( "+telnet mode :\n");
+		printf( " %s remote_host remote_port]\n", basename( argv[0]));
+		printf( "+server/proxy mode :\n");
+		printf( " %s -l -p local_port [remote_host [remote_port=local_port] [-disc]]\n", basename( argv[0]));
 		return -1;
 	}
 
@@ -497,7 +524,7 @@ int main( int argc, char *argv[])
 
 	if (sp)
 	{
-		printf( "server mode\n");
+		printf( "--server mode\n");
 	ss = socket( PF_INET, SOCK_STREAM, 0);
 	memset( &sa, 0, sizeof( sa));
 	sa.sin_addr.s_addr = INADDR_ANY;
@@ -514,29 +541,29 @@ int main( int argc, char *argv[])
 		pthread_t tid;
 		socklen_t clen;
 		
-		printf( "++accepting.. local server port=%d", sp);
+		printf( "--accepting.. local server port=%d", sp);
 		if (ch)
 			printf( " - will proxy to %s:%d", ch, cp);
 		printf( "\n");
 		clen = sizeof( csa);
 		css = accept( ss, (struct sockaddr *)&csa, &clen);
 	
-		printf( "++accepted !!\n");
+		printf( "--accepted !!\n");
 		if (!pthread_create( &tid, NULL, fn, (void *)css))
 		{
-			printf( "++succesfully created thread\n");
+			printf( "--succesfully created thread\n");
 		}
 		else
-			perror( "pthread_create");
+			perror( "--pthread_create");
 //		close( css);
-		printf( "++closed css\n");fflush( stdout);
+		printf( "--closed css\n");fflush( stdout);
 	}
-	printf( "++closing listening server\n");
+	printf( "--closing listening server\n");
 	close( ss);
 	}
 	else
 	{
-		printf( "telnet mode - server=[%s] port=%d\n", ch, cp);
+		printf( "--telnet mode - server=[%s] port=%d\n", ch, cp);
 		fn( (void *)0);
 	}
 	
