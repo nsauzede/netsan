@@ -105,7 +105,7 @@ void *fn( void *opaque)
 	if (ch)
 	{
 //		printf( "[%d]++connecting server..\n", (int)pid);
-		printf( "++connecting server..\n");
+		printf( "++connecting to %s:%d..\n", ch, cp);
 		cs = socket( PF_INET, SOCK_STREAM, 0);
 		memset( &ca, 0, sizeof( ca));
 		he = gethostbyname( ch);
@@ -219,19 +219,7 @@ void *fn( void *opaque)
 			else
 			{
 //				printf( "[%d]**select woken by unknown\n", (int)pid);
-//				n = 0;
-				src = -1;
-				if (css)
-				{
-					buf[0] = '>';
-					dst = css;
-				}
-				else
-				{
-					buf[0] = '<';
-					dst = cs;
-				}
-				ptr++;
+				src = -1; // to differentiate win32 stdin handle from win32 stdin fd
 			}
 	
 			if (src >= 0)
@@ -266,7 +254,7 @@ void *fn( void *opaque)
 			}
 			else
 			{
-				printf( "positive size (n=%d) buf=[%s] src=%d css=%d cs=%d\n", n, buf, src, css, cs);
+//				printf( "positive size (n=%d) buf=[%s] src=%d css=%d cs=%d\n", n, buf, src, css, cs);
 				if (n > size)
 					n = size;
 				if (src <= 0)
@@ -281,7 +269,7 @@ void *fn( void *opaque)
 					{
 						if ((!css || !cs) && (buf[0] == '\\'))
 							ptr++;
-						printf( "* inspecting input.. ptr=[%s]\n", ptr);
+//						printf( "* inspecting input.. ptr=[%s]\n", ptr);
 						if (!strncmp( ptr, CMD_DISC, strlen( CMD_DISC)))
 						{
 							disc = !disc;
@@ -546,49 +534,44 @@ int main( int argc, char *argv[])
 
 	if (sp)
 	{
-		if (ch)
-			printf( "--proxy mode\n");
-		else
-			printf( "--server mode\n");
-	ss = socket( PF_INET, SOCK_STREAM, 0);
-	memset( &sa, 0, sizeof( sa));
-	sa.sin_addr.s_addr = INADDR_ANY;
-	sa.sin_port = htons( sp);
-	sa.sin_family = AF_INET;
-	on = 1;
-	setsockopt( ss, SOL_SOCKET, SO_REUSEADDR, (const void *)&on, sizeof( on));
-	bind( ss, (struct sockaddr *)&sa, sizeof( sa));
-	listen( ss, 1);
-
-	end = 0;
-	while (!end)
-	{
-		pthread_t tid;
-		socklen_t clen;
-		
-		printf( "--accepting.. local server port=%d", sp);
-		if (ch)
-			printf( " - will proxy to %s:%d", ch, cp);
-		printf( "\n");
-		clen = sizeof( csa);
-		css = accept( ss, (struct sockaddr *)&csa, &clen);
-	
-		printf( "--accepted !!\n");
-		if (!pthread_create( &tid, NULL, fn, (void *)(long int)css))
+		ss = socket( PF_INET, SOCK_STREAM, 0);
+		memset( &sa, 0, sizeof( sa));
+		sa.sin_addr.s_addr = INADDR_ANY;
+		sa.sin_port = htons( sp);
+		sa.sin_family = AF_INET;
+		on = 1;
+		setsockopt( ss, SOL_SOCKET, SO_REUSEADDR, (const void *)&on, sizeof( on));
+		bind( ss, (struct sockaddr *)&sa, sizeof( sa));
+		listen( ss, 1);
+		end = 0;
+		while (!end)
 		{
-			printf( "--succesfully created thread\n");
+			pthread_t tid;
+			socklen_t clen;
+		
+			printf( "--accepting on localhost:%d", sp);
+			if (ch)
+				printf( " <= proxy => %s:%d", ch, cp);
+			printf( "\n");
+			clen = sizeof( csa);
+			css = accept( ss, (struct sockaddr *)&csa, &clen);
+		
+			printf( "--accepted !!\n");
+			if (!pthread_create( &tid, NULL, fn, (void *)(long int)css))
+			{
+				printf( "--succesfully created thread\n");
+			}
+			else
+				perror( "--pthread_create");
+	//		close( css);
+			printf( "--closed css\n");fflush( stdout);
 		}
-		else
-			perror( "--pthread_create");
-//		close( css);
-		printf( "--closed css\n");fflush( stdout);
-	}
-	printf( "--closing listening server\n");
-	close( ss);
+		printf( "--closing listening server\n");
+		close( ss);
 	}
 	else
 	{
-		printf( "--telnet mode - server=[%s] port=%d\n", ch, cp);
+		printf( "--telnet mode - remote server is %s:%d\n", ch, cp);
 		fn( (void *)0);
 	}
 	

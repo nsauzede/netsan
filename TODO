@@ -1,5 +1,4 @@
--FIX help not working in client and server mode
-
+-add http proxy auth Basic
 -move local kb handling to main thread ? conflict with worker thread(s) i/o ?
  -maybe implement a fifo between them ?
 -conform to new args syntax (nc like)
@@ -12,5 +11,6 @@
 Done:
 -validated server&proxy modes in recv on mingw32
 -validated full on console32
+-FIX help not working in client and server mode
 
 
