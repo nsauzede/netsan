@@ -279,7 +279,9 @@ void *fn( void *opaque)
  */
 					if (((!css || !cs) && (buf[0] == '\\')) || ((css && cs) && (buf[0] != '>') && (buf[0] != '<')))
 					{
-//						printf( "* inspecting input.. ptr=[%s]\n", ptr);
+						if ((!css || !cs) && (buf[0] == '\\'))
+							ptr++;
+						printf( "* inspecting input.. ptr=[%s]\n", ptr);
 						if (!strncmp( ptr, CMD_DISC, strlen( CMD_DISC)))
 						{
 							disc = !disc;
