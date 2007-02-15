@@ -266,7 +266,7 @@ void *fn( void *opaque)
 			}
 			else
 			{
-//				printf( "positive size (n=%d) buf=[%s]\n", n, buf);
+				printf( "positive size (n=%d) buf=[%s] src=%d css=%d cs=%d\n", n, buf, src, css, cs);
 				if (n > size)
 					n = size;
 				if (src <= 0)
