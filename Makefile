@@ -12,8 +12,9 @@ ifndef WIN32
 #TARGET+=	gproxy
 endif
 
-CFLAGS=	-Wall -Werror -g -O0 -m32
-LDFLAGS=	-m32
+CFLAGS=	-Wall -Werror -g -O0
+#CFLAGS+=-m32
+#LDFLAGS=	-m32
 
 THREADF=
 ifdef WIN32

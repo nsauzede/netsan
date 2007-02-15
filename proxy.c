@@ -90,7 +90,7 @@ void *fn( void *opaque)
 	void * result = 0;
 #endif
 	struct hostent *he;
-	int css = (int)opaque;
+	int css = (int)(long int)opaque;
 //	int pid = getpid();
 
 	int cs = 0, max = 0;
@@ -137,7 +137,7 @@ void *fn( void *opaque)
 //		printf( "[%d] LOCAL MODE\n", (int)pid);
 //		printf( "++LOCAL MODE\n");
 	}
-	printf( "++ch=%p css=%d cs=%d\n", ch, css, cs);
+//	printf( "++ch=%p css=%d cs=%d\n", ch, css, cs);
 	if (css > max)
 		max = css;
 	max++;
@@ -557,7 +557,7 @@ int main( int argc, char *argv[])
 		css = accept( ss, (struct sockaddr *)&csa, &clen);
 	
 		printf( "--accepted !!\n");
-		if (!pthread_create( &tid, NULL, fn, (void *)css))
+		if (!pthread_create( &tid, NULL, fn, (void *)(long int)css))
 		{
 			printf( "--succesfully created thread\n");
 		}
