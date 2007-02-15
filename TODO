@@ -9,3 +9,8 @@
 -add file storage ? (log transactions)
 -replay transactions ?
 
+Done:
+-validated server&proxy modes in recv on mingw32
+-validated full on console32
+
+

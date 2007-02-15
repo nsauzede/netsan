@@ -1,6 +1,6 @@
-/******************************
+/*************************************
  * Proxy/Netsan - (c) N.Sauzede 2007 *
- ******************************/
+ *************************************/
 
 #include <stdio.h>
 #include <sys/time.h>
@@ -61,6 +61,14 @@ while (0)
 #define CMD_EXIT	CMD_PRL "exit"		// app
 #define ARG_DISC	"-disc"
 
+int end = 0;
+int init = 0;
+int disc = 0;
+char *ch = 0;
+int cp = 0;
+int iscurse = 1;		// iscurse=1 means we can kbhit()/select() on stdin (default on linux)
+int istty = 1;		// istty=1 means we can output ANSI codes (default on linux)
+
 void asciify( char *ptr, int n)
 {
 	while (n > 0)
@@ -73,13 +81,6 @@ void asciify( char *ptr, int n)
 	}
 	*ptr = 0;
 }
-
-int end = 0;
-int init = 0;
-int disc = 0;
-char *ch = 0;
-int cp = 0;
-int istty = 1;		// istty=1 means we can kbhit()/select() on stdin (default on linux)
 
 #ifdef WIN32
 DWORD WINAPI fn( LPVOID opaque)
@@ -458,12 +459,14 @@ int main( int argc, char *argv[])
 	if (GetConsoleMode( GetStdHandle(STD_INPUT_HANDLE), &mode))
 	{
 //		printf( "GetConsoleMode returned TRUE : mode=%08lx\n", mode);
-		istty = 1;
+		iscurse = 1;
+		istty = 0;
 	}
 	else
 	{
 //		printf( "GetConsoleMode returned FALSE\n");
-		istty = 0;
+		iscurse = 0;
+		istty = 1;
 	}
 /*
 	if (ReadConsole( GetStdHandle(STD_INPUT_HANDLE), buf, sizeof( buf), &count, NULL))
