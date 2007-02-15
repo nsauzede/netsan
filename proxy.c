@@ -1,5 +1,5 @@
 /******************************
- * Proxy - (c) N.Sauzede 2005 *
+ * Proxy/Netsan - (c) N.Sauzede 2007 *
  ******************************/
 
 #include <stdio.h>
@@ -133,9 +133,11 @@ void *fn( void *opaque)
 		max = cs;
 	}
 	else
+	{
 //		printf( "[%d] LOCAL MODE\n", (int)pid);
-		printf( "++LOCAL MODE\n");
-//	printf( "++ch=%p css=%d cs=%d\n", ch, css, cs);
+//		printf( "++LOCAL MODE\n");
+	}
+	printf( "++ch=%p css=%d cs=%d\n", ch, css, cs);
 	if (css > max)
 		max = css;
 	max++;
@@ -298,15 +300,18 @@ void *fn( void *opaque)
 						}
 						n = 0;	// don't write anything afterwards
 					}
-					else if (!cs)
+					else if (!cs || !css)
 					{
-						dst = css;
-						col = ccol;
-					}
-					else if (!css)
-					{
-						dst = cs;
-						col = ccol;
+						if (!cs)
+						{
+							dst = css;
+							col = ccol;
+						}
+						else if (!css)
+						{
+							dst = cs;
+							col = ccol;
+						}
 					}
 					else if (buf[0] == '>')
 					{
@@ -326,7 +331,7 @@ void *fn( void *opaque)
 				if (n)
 				{
 //					printf( "disc=%d src=%d\n", disc, src);
-					if (!disc && (src <= 0) && (dst > 0))
+					if (!disc /*&& (src <= 0)*/ && (dst > 0))
 					{
 //						printf( "Sending n=%d ptr=[%s] to dst=%d cs=%d css=%d..\n", n, ptr, dst, cs, css);
 						send( dst, ptr, n, 0);
@@ -524,7 +529,10 @@ int main( int argc, char *argv[])
 
 	if (sp)
 	{
-		printf( "--server mode\n");
+		if (ch)
+			printf( "--proxy mode\n");
+		else
+			printf( "--server mode\n");
 	ss = socket( PF_INET, SOCK_STREAM, 0);
 	memset( &sa, 0, sizeof( sa));
 	sa.sin_addr.s_addr = INADDR_ANY;

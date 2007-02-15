@@ -1,0 +1,9 @@
+-move local kb handling to main thread ? conflict with worker thread(s) i/o ?
+ -maybe implement a fifo between them ?
+-conform to new args syntax (nc like)
+-find a good name; netsan aka ns ? hehe
+-add codepage support ?
+-add hexdump support ?
+-add file storage ? (log transactions)
+-replay transactions ?
+
