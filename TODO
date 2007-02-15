@@ -1,3 +1,5 @@
+-FIX help not working in client and server mode
+
 -move local kb handling to main thread ? conflict with worker thread(s) i/o ?
  -maybe implement a fifo between them ?
 -conform to new args syntax (nc like)

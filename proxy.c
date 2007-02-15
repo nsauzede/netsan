@@ -52,7 +52,8 @@ while (0)
 #define DEF_C_PORT	5001
 #define BUF_SIZE	(10 * 1024)
 #define MAX_HOST	64
-#define CMD_PRL		"\\"
+//#define CMD_PRL		"\\"
+#define CMD_PRL		""
 #define CMD_HELP	CMD_PRL "help"		// help
 #define CMD_PROXY	CMD_PRL "proxy"		// s_host s_port [c_port]
 #define CMD_DISC	CMD_PRL "disc"		// disc
@@ -78,7 +79,7 @@ int init = 0;
 int disc = 0;
 char *ch = 0;
 int cp = 0;
-int istty = 0;
+int istty = 1;		// istty=1 means we can kbhit()/select() on stdin (default on linux)
 
 #ifdef WIN32
 DWORD WINAPI fn( LPVOID opaque)
@@ -152,7 +153,7 @@ void *fn( void *opaque)
 		int col = 0, size;
 		static int header = 1;
 
-		if (!(css && cs) && header && istty)
+		if (!(css && cs) && header && !istty)
 		{
 			printf( ">");fflush( stdout);
 			header = 0;
@@ -220,10 +221,15 @@ void *fn( void *opaque)
 //				n = 0;
 				src = -1;
 				if (css)
+				{
+					buf[0] = '>';
 					dst = css;
+				}
 				else
+				{
+					buf[0] = '<';
 					dst = cs;
-				buf[0] = '>';
+				}
 				ptr++;
 			}
 	
@@ -246,10 +252,10 @@ void *fn( void *opaque)
 #ifdef WIN32
 //				printf( "[%d]read returned n=%d : %d\n", (int)pid, n, WSAGetLastError());
 				printf( "++read returned n=%d : %d\n", n, WSAGetLastError());
-				break;
 #else
 				perror( "++read");
 #endif
+				break;
 			}
 			else if (n == 0)
 			{
@@ -264,7 +270,13 @@ void *fn( void *opaque)
 					n = size;
 				if (src <= 0)
 				{
-					if (buf[0] == '\\')
+/*
+ * proxy : cs && css : cmds directes, ser < proxy > cli
+ * client: cs        : ser direct, cmds \
+ * server: css       : cli direct, cmds \
+ *
+ */
+					if (((!css || !cs) && (buf[0] == '\\')) || ((css && cs) && (buf[0] != '>') && (buf[0] != '<')))
 					{
 //						printf( "* inspecting input.. ptr=[%s]\n", ptr);
 						if (!strncmp( ptr, CMD_DISC, strlen( CMD_DISC)))
@@ -339,7 +351,7 @@ void *fn( void *opaque)
 					if (src > 0)
 					{
 						asciify( buf, n + 1);
-						if (!istty)
+						if (istty)
 							ptr = buf + 1;
 						else
 							ptr = buf;
@@ -347,22 +359,22 @@ void *fn( void *opaque)
 						if (col)
 						{
 //							printf( "[%d]", (int)pid);
-							if (!istty)
+							if (istty)
 								printf( "\x1b[01;%02dm", col);
 							printf( "%s", ptr);
-							if (!istty)
+							if (istty)
 								printf( "\x1b[00m");
 						}
 						else
 						{
 //							printf( "[%d]", (int)pid);
-							if (!istty)
+							if (istty)
 								printf( "\x1b[00m");
 							printf( "%s", ptr);
-							if (!istty)
+							if (istty)
 								printf( "\x1b[00m");
 						}
-						if (!istty)
+						if (istty)
 							printf( "\x1b[m");
 						fflush( stdout);
 					}
