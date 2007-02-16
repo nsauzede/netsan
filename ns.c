@@ -215,7 +215,7 @@ void *fn( void *opaque)
 				src = cs;
 				dst = css;
 				col = ccol;
-				buf[0] = disc ? ']' : '>';
+				buf[0] = disc ? ']' : '<';
 				ptr++;
 				size--;
 			}
@@ -224,7 +224,7 @@ void *fn( void *opaque)
 				src = css;
 				dst = cs;
 				col = cscol;
-				buf[0] = disc ? '[' : '<';
+				buf[0] = disc ? '[' : '>';
 				ptr++;
 				size--;
 			}
@@ -332,14 +332,14 @@ void *fn( void *opaque)
 							col = ccol;
 						}
 					}
-					else if (buf[0] == '>')
+					else if (buf[0] == '<')
 					{
 						dst = css;
 						col = ccol;
 						ptr++;
 						n--;
 					}
-					else if (buf[0] == '<')
+					else if (buf[0] == '>')
 					{
 						dst = cs;
 						col = cscol;
