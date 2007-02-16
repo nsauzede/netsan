@@ -50,6 +50,6 @@ gproxy$(EXT):	gproxy.c
 clean:
 	$(RM) $(TARGET) *.o
 
-install:
+install: all
 	$(INSTALL) $(TARGET) $(PREFIX)
 
