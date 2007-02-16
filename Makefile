@@ -7,9 +7,15 @@ ifneq ($(strip $(shell $(CC) -v 2>&1 | grep "mingw")),)
 WIN32=true
 endif
 
-TARGET=	tproxy.exe proxy.exe
+ifdef WIN32
+EXT=.exe
+else
+EXT=
+endif
+
+TARGET=	tproxy$(EXT) ns$(EXT)
 ifndef WIN32
-#TARGET+=	gproxy
+TARGET+=	gproxy$(EXT)
 endif
 
 CFLAGS=	-Wall -Werror -g -O0
@@ -30,15 +36,15 @@ GTK_FLAGS=	$(CFLAGS) `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0`
 
 all:	$(TARGET)
 
-tproxy.exe:	tproxy.o
+tproxy$(EXT):	tproxy.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-proxy.exe:	LDFLAGS+=$(THREADF)
+ns$(EXT):	LDFLAGS+=$(THREADF)
 
-proxy.exe:	proxy.o
+ns$(EXT):	ns.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-gproxy.exe:	gproxy.c
+gproxy$(EXT):	gproxy.c
 	$(CC) $(GTK_FLAGS) $< -o $@ $(LDFLAGS)
 
 clean:

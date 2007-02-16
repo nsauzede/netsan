@@ -1,5 +1,5 @@
 /*************************************
- * Proxy/Netsan - (c) N.Sauzede 2007 *
+ * NetSan - (c) N.Sauzede 2007 *
  *************************************/
 
 #include <stdio.h>
@@ -14,7 +14,21 @@
 #ifdef WIN32
 #include <conio.h>
 #include <winsock2.h>
-#define basename(foo)	foo	/* win32 su^H^Hlacks basename support */
+//#define basename(foo)	foo	/* win32 su^H^Hlacks basename support */
+#define basename(foo)	_basename(foo)	/* win32 su^H^Hlacks basename support */
+char *_basename( const char *str)
+{
+	char *result = (char *)str + strlen( str);
+	while (result > str)
+	{
+		if (*result == '\\')
+			break;
+		else if (*result == '/')
+			break;
+		result--;
+	}
+	return result + 1;
+}
 #define socklen_t int
 /* win32 doesn't flush stdout on a line-out-basis */
 #define printf(...) \
@@ -44,6 +58,8 @@ while (0)
 #include <pthread.h>
 #define SOCKET_ERROR	-1
 #endif
+
+#define NETSAN_VERSION	"0.1pre"
 
 #define PROXY_PORT	1234
 
@@ -510,11 +526,14 @@ int main( int argc, char *argv[])
 //	printf( "testing init\n");
 	if (!init)
 	{
+		printf( "\nNetSan aka Mr Net version %s - (c) N.Sauzede 2007\n", NETSAN_VERSION);
+		printf( "\n");
 		printf( "Usage :\n");
-		printf( "+telnet mode :\n");
-		printf( " %s remote_host remote_port]\n", basename( argv[0]));
-		printf( "+server/proxy mode :\n");
+//		printf( "\n(telnet mode) :");
+		printf( " %s remote_host remote_port\n", basename( argv[0]));
+//		printf( "\n(server/proxy mode) :");
 		printf( " %s -l -p local_port [remote_host [remote_port=local_port] [-disc]]\n", basename( argv[0]));
+		printf( "\n\n");
 		return -1;
 	}
 
