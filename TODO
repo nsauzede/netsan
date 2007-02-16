@@ -1,8 +1,7 @@
+-!!!!!move local kb handling to main thread? conflict with worker thread(s) i/o?
 -add http proxy auth Basic
--move local kb handling to main thread ? conflict with worker thread(s) i/o ?
  -maybe implement a fifo between them ?
 -conform to new args syntax (nc like)
--find a good name; netsan aka ns ? hehe
 -add codepage support ?
 -add hexdump support ?
 -add file storage ? (log transactions)
@@ -12,5 +11,4 @@ Done:
 -validated server&proxy modes in recv on mingw32
 -validated full on console32
 -FIX help not working in client and server mode
-
-
+-changed name to ns (netsan)
