@@ -15,7 +15,7 @@ endif
 
 TARGET=	tproxy$(EXT) ns$(EXT)
 ifndef WIN32
-TARGET+=	gproxy$(EXT)
+#TARGET+=	gproxy$(EXT)
 endif
 
 CFLAGS=	-Wall -Werror -g -O0
