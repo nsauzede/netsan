@@ -1,4 +1,6 @@
 -!!!!!move local kb handling to main thread? conflict with worker thread(s) i/o?
+-fix libsocket error codes for mingw32
+-fix direction for incoming data in server mode
 -add http proxy auth Basic
  -maybe implement a fifo between them ?
 -conform to new args syntax (nc like)
@@ -8,6 +10,7 @@
 -replay transactions ?
 
 Done:
+-removed need for ctor
 -validated server&proxy modes in recv on mingw32
 -validated full on console32
 -FIX help not working in client and server mode

@@ -24,7 +24,8 @@ CFLAGS=	-Wall -Werror -g -O0
 
 THREADF=
 ifdef WIN32
-LDFLAGS+= -L. -Wl,--whole-archive -lsocket -Wl,--no-whole-archive -lwsock32
+#LDFLAGS+= -L. -Wl,--whole-archive -lsocket -Wl,--no-whole-archive -lwsock32
+LDFLAGS+= -L. -lsocket -lwsock32
 CFLAGS+= -I./include
 #CFLAGS+= -mno-cygwin
 INSTALL= install
@@ -46,7 +47,8 @@ libsocket.o: src/socket.c
 libsocket_ctor.o: src/socket_ctor.cpp
 	$(CC) -c -o $@ $(CFLAGS) $^
 
-libsocket.a: libsocket.o libsocket_ctor.o
+#libsocket.a: libsocket.o libsocket_ctor.o
+libsocket.a: libsocket.o
 	$(AR) cru $@ $^
 
 clean:

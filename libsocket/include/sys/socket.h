@@ -29,9 +29,8 @@ extern int compat_select(int nfds, fd_set *readfds, fd_set *writefds,fd_set *exc
 extern int compat_connect(int  sockfd,  const  struct sockaddr *serv_addr, socklen_t addrlen);
 extern int compat_accept( int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 extern int compat_socket( int domain, int type, int protocol);
-#else
-extern int socket_init();
 #endif
+extern int compat_socket_init();
 #endif
 
 #endif

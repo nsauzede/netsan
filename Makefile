@@ -24,7 +24,8 @@ CFLAGS=	-Wall -Werror -g -O0
 
 THREADF=
 ifdef WIN32
-LDFLAGS+= -L./libsocket -Wl,--whole-archive -lsocket -Wl,--no-whole-archive -lwsock32
+LDFLAGS+= -L./libsocket -Wl,--whole-archive -lsocket -Wl,--no-whole-archive -lws2_32
+#LDFLAGS+= -L./libsocket -lsocket -lws2_32
 CFLAGS+= -mno-cygwin -I./libsocket/include
 INSTALL= install
 else

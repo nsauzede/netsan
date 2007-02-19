@@ -37,7 +37,7 @@ static SocketCtor socketctor;
 
 SocketCtor::SocketCtor()
 {
-	socket_init();
+	compat_socket_init();
 }
 
 /* EOF */
