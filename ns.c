@@ -23,6 +23,7 @@
 #ifdef WIN32
 #include <windows.h>
 #include <conio.h>
+#define sleep _sleep
 /* win32 doesn't flush stdout on a line-out-basis */
 #define printf(...) \
 do \
@@ -519,6 +520,8 @@ int main( int argc, char *argv[])
 			printf( "\n");
 			clen = sizeof( csa);
 			css = accept( ss, (struct sockaddr *)&csa, &clen);
+			if (css < 0)
+				continue;
 		
 			printf( "--accepted !!\n");
 			if (!pthread_create( &tid, NULL, fn, (void *)(long int)css))

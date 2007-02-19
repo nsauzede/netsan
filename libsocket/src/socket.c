@@ -5,10 +5,16 @@
 #undef NO_COMPAT_SOCKET
 #include <errno.h>
 
+static int is_init = 0;
+
 int socket_init()
 {
 	int result = 0;
-	printf( "%s\n", __func__);
+
+	printf( "%s: is_init=%d\n", __func__, is_init);
+	if (!is_init)
+	{
+		is_init = 1;
 #ifdef WIN32
 	WSADATA wsaData;
     int iResult;
@@ -20,30 +26,18 @@ int socket_init()
 	     result = -1;
     }
 #endif
-	return result;
-}
-
-int compat_select( int nfds, fd_set *readfds, fd_set *writefds,
-	fd_set *exceptfds, struct timeval *timeout)
-{
-	int result;
-
-	errno = 0;
-	if ((result = select( nfds, readfds, writefds, exceptfds, timeout)) == SOCKET_ERROR)
-	{
-		errno = WSAGetLastError();
-		result = -1;
 	}
 
 	return result;
 }
 
-int compat_error()
+int compat_errno()
 {
-	int _errno;
+	int _errno, err;
 
-		int err = WSAGetLastError();
-		switch (err)
+	err = WSAGetLastError();
+	printf( "%s: err=%d\n", __func__, err);
+	switch (err)
 		{
 			case WSAEACCES:
 				_errno = EACCES;
@@ -71,6 +65,7 @@ int compat_error()
 				break;
 
 			case WSANOTINITIALISED:
+				printf( "WSA not initialized !!\n");
 				socket_init();
 				_errno = EAGAIN;
 				break;
@@ -91,14 +86,47 @@ int compat_error()
 	return _errno;
 }
 
+int compat_select( int nfds, fd_set *readfds, fd_set *writefds,
+	fd_set *exceptfds, struct timeval *timeout)
+{
+	int result;
+
+//	printf( "%s\n", __func__);
+	errno = 0;
+	if ((result = select( nfds, readfds, writefds, exceptfds, timeout)) == SOCKET_ERROR)
+	{
+		errno = compat_errno();
+		result = -1;
+	}
+
+	return result;
+}
+
 int compat_connect( int  sockfd,  const  struct sockaddr *serv_addr, socklen_t
        addrlen)
 {
 	int result = 0;
 
+	printf( "%s\n", __func__);
 	errno = 0;
 	if (connect( sockfd, serv_addr, addrlen) == SOCKET_ERROR)
 	{
+		errno = compat_errno();
+		result = -1;
+	}
+
+	return result;
+}
+
+int compat_socket(int domain, int type, int protocol)
+{
+	int result;
+
+	printf( "%s\n", __func__);
+	errno = 0;
+	if ((result = socket( domain, type, protocol)) == INVALID_SOCKET)
+	{
+		errno = compat_errno();
 		result = -1;
 	}
 
@@ -109,10 +137,11 @@ int compat_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 {
 	int result;
 
+	printf( "%s\n", __func__);
 	errno = 0;
 	if ((result = accept( sockfd, addr, addrlen)) == INVALID_SOCKET)
 	{
-		errno = WSAGetLastError();
+		errno = compat_errno();
 		result = -1;
 	}
 

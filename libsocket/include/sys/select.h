@@ -8,7 +8,7 @@
 
 inline void compat_FD_SET(a,b)
 {
-//	printf( "%s\n", __func__);
+//	printf( "%s: a=%d\n", __func__, a);
 	if (a)
 		FD_SET( a, b);
 }
