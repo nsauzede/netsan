@@ -40,34 +40,34 @@ int compat_errno()
 	switch (err)
 		{
 			case WSAEACCES:
-				_errno = EACCES;
+				_errno = -EACCES;
 				break;
 			case WSAEADDRINUSE:
-				_errno = EADDRINUSE;
+				_errno = -EADDRINUSE;
 				break;
 			case WSAEINTR:
-				_errno = EINTR;
+				_errno = -EINTR;
 				break;
 			case WSAEALREADY:
-				_errno = EALREADY;
+				_errno = -EALREADY;
 				break;
 			case WSAECONNREFUSED:
-				_errno = ECONNREFUSED;
+				_errno = -ECONNREFUSED;
 				break;
 			case WSAEFAULT:
-				_errno = EFAULT;
+				_errno = -EFAULT;
 				break;
 			case WSAEISCONN:
-				_errno = EISCONN;
+				_errno = -EISCONN;
 				break;
 			case WSAENETUNREACH:
-				_errno = ENETUNREACH;
+				_errno = -ENETUNREACH;
 				break;
 
 			case WSANOTINITIALISED:
 //				printf( "WSA not initialized !!\n");
 				compat_socket_init();
-				_errno = EAGAIN;
+				_errno = -EAGAIN;
 				break;
 
 			case WSAENETDOWN:
@@ -129,7 +129,7 @@ int compat_socket(int domain, int type, int protocol)
 		if ((result = socket( domain, type, protocol)) == INVALID_SOCKET)
 		{
 			errno = compat_errno();
-			if (errno == EAGAIN)
+			if (errno == -EAGAIN)
 				continue;
 			result = -1;
 		}
