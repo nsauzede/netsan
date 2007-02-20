@@ -9,6 +9,10 @@ CC:=gcc
 endif
 ifneq ($(strip $(shell $(CC) -v 2>&1 | grep "mingw")),)
 WIN32=true
+else
+ifneq ($(strip $(shell $(CC) -v 2>&1 | grep -i "SunOS")),)
+SOL8=true
+endif
 endif
 
 ifdef WIN32
@@ -32,6 +36,9 @@ LDFLAGS+= -L$(LIBSOCKET) -lsocket -lws2_32
 #LDFLAGS+= -L./libsocket -lsocket -lws2_32
 CFLAGS+= -I$(LIBSOCKET)/include
 else
+ifdef SOL8
+LDFLAGS+= -lsocket
+endif
 THREADF+=-lpthread
 endif
 INSTALL= install

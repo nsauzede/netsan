@@ -1,15 +1,15 @@
 -!!!!!move local kb handling to main thread? conflict with worker thread(s) i/o?
--fix libsocket error codes for mingw32
--fix direction for incoming data in server mode
+-fix direction for incoming data in server mode for non-ANSI term (w32 console)
 -add http proxy auth Basic
  -maybe implement a fifo between them ?
--conform to new args syntax (nc like)
+-truly conform to new args syntax (nc like)
 -add codepage support ?
 -add hexdump support ?
 -add file storage ? (log transactions)
 -replay transactions ?
 
 Done:
+-fixed libsocket error codes for mingw32
 -removed need for ctor
 -validated server&proxy modes in recv on mingw32
 -validated full on console32
