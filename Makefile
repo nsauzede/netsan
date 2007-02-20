@@ -1,4 +1,6 @@
-PREFIX=/opt/bin
+ifndef PREFIX
+PREFIX=/opt
+endif
 
 ifndef CC
 CC:=gcc
@@ -27,10 +29,10 @@ ifdef WIN32
 LDFLAGS+= -L./libsocket -Wl,--whole-archive -lsocket -Wl,--no-whole-archive -lws2_32
 #LDFLAGS+= -L./libsocket -lsocket -lws2_32
 CFLAGS+= -mno-cygwin -I./libsocket/include
-INSTALL= install
 else
 THREADF+=-lpthread
 endif
+INSTALL= install
 
 
 GTK_FLAGS=	$(CFLAGS) `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0`
@@ -52,5 +54,5 @@ clean:
 	$(RM) $(TARGET) *.o
 
 install: all
-	$(INSTALL) $(TARGET) $(PREFIX)
+	$(INSTALL) $(TARGET) $(PREFIX)/bin
 
