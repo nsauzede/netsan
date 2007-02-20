@@ -2,6 +2,8 @@ ifndef PREFIX
 PREFIX=/opt
 endif
 
+LIBSOCKET=/home/sauzeden/hg/libsocket
+
 ifndef CC
 CC:=gcc
 endif
@@ -26,16 +28,14 @@ CFLAGS=	-Wall -Werror -g -O0
 
 THREADF=
 ifdef WIN32
-LDFLAGS+= -L./libsocket -Wl,--whole-archive -lsocket -Wl,--no-whole-archive -lws2_32
+LDFLAGS+= -L$(LIBSOCKET) -lsocket -lws2_32
 #LDFLAGS+= -L./libsocket -lsocket -lws2_32
-CFLAGS+= -mno-cygwin -I./libsocket/include
+CFLAGS+= -I$(LIBSOCKET)/include
 else
 THREADF+=-lpthread
 endif
 INSTALL= install
 
-
-GTK_FLAGS=	$(CFLAGS) `pkg-config --cflags gtk+-2.0` `pkg-config --libs gtk+-2.0`
 
 all:	$(TARGET)
 
