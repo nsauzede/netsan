@@ -1,3 +1,4 @@
+-fix read error msg when server close socket on mingw
 -!!!!!move local kb handling to main thread? conflict with worker thread(s) i/o?
 -fix direction for incoming data in server mode for non-ANSI term (w32 console)
 -add http proxy auth Basic
