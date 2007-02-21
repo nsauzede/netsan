@@ -542,8 +542,8 @@ int main( int argc, char *argv[])
 			if (css < 0)
 				continue;
 		
-			he = gethostbyaddr( (const void *)&csa.sin_addr, sizeof( csa.sin_addr), AF_INET);
-			printf( "--accepted !! client=%s (%s)\n", inet_ntoa( csa.sin_addr), he ? he->h_addr : "*UNRESOLVED*");
+			he = gethostbyaddr( (char *)&csa.sin_addr, sizeof( csa.sin_addr), AF_INET);
+			printf( "--accepted !! client=%s (%s)\n", inet_ntoa( csa.sin_addr), he ? he->h_name : "*UNRESOLVED*");
 			if (!pthread_create( &tid, NULL, fn, (void *)(long int)css))
 			{
 				printf( "--succesfully created thread\n");
