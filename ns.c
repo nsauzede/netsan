@@ -406,7 +406,7 @@ int isdignum( const char *str)
 			}
 		}
 	}
-
+	
 	return result;
 }
 
@@ -445,6 +445,16 @@ int main( int argc, char *argv[])
 	}
 */
 #endif
+	/* XXX */
+	while (argc > arg)
+	{
+		if (!strcmp( argv[arg], "-l") || !strcmp( argv[arg], "-p"))
+		{
+			arg++;
+			continue;
+		}
+		break;
+	}
 	if (argc > arg)
 	{
 		ch = argv[arg++];
@@ -506,13 +516,22 @@ int main( int argc, char *argv[])
 		sa.sin_family = AF_INET;
 		on = 1;
 		setsockopt( ss, SOL_SOCKET, SO_REUSEADDR, (const void *)&on, sizeof( on));
-		bind( ss, (struct sockaddr *)&sa, sizeof( sa));
-		listen( ss, 1);
+		if (bind( ss, (struct sockaddr *)&sa, sizeof( sa)))
+		{
+			perror( "bind");
+			goto bailout;
+		}
+		if (listen( ss, 1))
+		{
+			perror( "listen");
+			goto bailout;
+		}
 		end = 0;
 		while (!end)
 		{
 			pthread_t tid;
 			socklen_t clen;
+			struct hostent *he;
 		
 			printf( "--accepting on localhost:%d", sp);
 			if (ch)
@@ -523,7 +542,8 @@ int main( int argc, char *argv[])
 			if (css < 0)
 				continue;
 		
-			printf( "--accepted !! client=%s\n", inet_ntoa( csa.sin_addr));
+			he = gethostbyaddr( (const void *)&csa.sin_addr, sizeof( csa.sin_addr), AF_INET);
+			printf( "--accepted !! client=%s (%s)\n", inet_ntoa( csa.sin_addr), he ? he->h_addr : "*UNRESOLVED*");
 			if (!pthread_create( &tid, NULL, fn, (void *)(long int)css))
 			{
 				printf( "--succesfully created thread\n");
@@ -534,6 +554,7 @@ int main( int argc, char *argv[])
 			printf( "--closed css\n");fflush( stdout);
 		}
 		printf( "--closing listening server\n");
+bailout:
 		close( ss);
 	}
 	else
