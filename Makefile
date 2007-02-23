@@ -30,6 +30,7 @@ CFLAGS=	-Wall -Werror -g -O0
 #CFLAGS+=-m32
 #LDFLAGS=	-m32
 
+INSTALL= install
 THREADF=
 ifdef WIN32
 LDFLAGS+= -L$(LIBUNIX) -lunix -lws2_32
