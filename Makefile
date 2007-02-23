@@ -37,11 +37,11 @@ CFLAGS+= -I$(LIBUNIX)/include
 else
 ifdef SOL8
 LDFLAGS+= -lsocket
+INSTALL= cp -f
 endif
 THREADF+=-lpthread
 endif
 
-INSTALL= install
 
 all:	$(TARGET)
 

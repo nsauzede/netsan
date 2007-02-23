@@ -264,6 +264,7 @@ void *fn( void *opaque)
 						}
 						else if (!strncmp( ptr, CMD_HELP, strlen( CMD_HELP)))
 						{
+							printf( "++Netsan version %s\n", NETSAN_VERSION);
 							printf( "++%s\tget help about available commands\n", CMD_HELP);
 							printf( "++%s\t[dis]connect client and server\n", CMD_DISC);
 							printf( "++%s\tterminate current client connection\n", CMD_QUIT);
