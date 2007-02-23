@@ -40,15 +40,15 @@ LDFLAGS+= -lsocket
 endif
 THREADF+=-lpthread
 endif
-INSTALL= install
 
+INSTALL= install
 
 all:	$(TARGET)
 
 tproxy$(EXT):	tproxy.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-netsan$(EXT):	LDFLAGS+=$(THREADF)
+ns$(EXT):	LDFLAGS+=$(THREADF)
 
 ns$(EXT):	netsan.o
 	$(CC) -o $@ $^ $(LDFLAGS)

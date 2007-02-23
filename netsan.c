@@ -34,7 +34,7 @@ fflush(stdout); \
 while (0)
 #endif
 
-#define NETSAN_VERSION	"0.1pre"
+#define NETSAN_VERSION	"0.1"
 
 #define PROXY_PORT	1234
 
