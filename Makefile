@@ -2,7 +2,7 @@ ifndef PREFIX
 PREFIX=/opt
 endif
 
-LIBSOCKET=/home/sauzeden/hg/libsocket
+LIBUNIX=/home/sauzeden/hg/libunix
 
 ifndef CC
 CC:=gcc
@@ -21,7 +21,7 @@ else
 EXT=
 endif
 
-TARGET=	tproxy$(EXT) ns$(EXT)
+TARGET=	ns$(EXT)
 ifndef WIN32
 #TARGET+=	gproxy$(EXT)
 endif
@@ -32,9 +32,8 @@ CFLAGS=	-Wall -Werror -g -O0
 
 THREADF=
 ifdef WIN32
-LDFLAGS+= -L$(LIBSOCKET) -lsocket -lws2_32
-#LDFLAGS+= -L./libsocket -lsocket -lws2_32
-CFLAGS+= -I$(LIBSOCKET)/include
+LDFLAGS+= -L$(LIBUNIX) -lunix -lws2_32
+CFLAGS+= -I$(LIBUNIX)/include
 else
 ifdef SOL8
 LDFLAGS+= -lsocket
@@ -49,9 +48,9 @@ all:	$(TARGET)
 tproxy$(EXT):	tproxy.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-ns$(EXT):	LDFLAGS+=$(THREADF)
+netsan$(EXT):	LDFLAGS+=$(THREADF)
 
-ns$(EXT):	ns.o
+ns$(EXT):	netsan.o
 	$(CC) -o $@ $^ $(LDFLAGS)
 
 gproxy$(EXT):	gproxy.c
