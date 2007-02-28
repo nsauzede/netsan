@@ -186,7 +186,10 @@ void *fn( void *opaque)
 				src = css;
 				dst = cs;
 				col = cscol;
+				if (ch)
 				buf[0] = disc ? '[' : '<';
+				else
+				buf[0] = disc ? ']' : '>';
 				ptr++;
 				size--;
 			}
@@ -551,8 +554,8 @@ int main( int argc, char *argv[])
 			}
 			else
 				perror( "--pthread_create");
-	//		close( css);
-			printf( "--closed css\n");fflush( stdout);
+//			close( css);
+//			printf( "--closed css\n");fflush( stdout);
 		}
 		printf( "--closing listening server\n");
 bailout:
