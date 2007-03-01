@@ -43,6 +43,10 @@ endif
 THREADF+=-lpthread
 endif
 
+DATE:=`date`
+CFLAGS+=-DNETSAN_DATE="\"$(DATE)\""
+#CFLAGS+=-DNETSAN_DATE="\"the date\""
+
 
 all:	$(TARGET)
 

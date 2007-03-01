@@ -23,18 +23,10 @@
 #ifdef WIN32
 #include <windows.h>
 #include <conio.h>
-#define sleep _sleep
-/* win32 doesn't flush stdout on a line-out-basis */
-#define printf(...) \
-do \
-{ \
-printf(__VA_ARGS__); \
-fflush(stdout); \
-} \
-while (0)
 #endif
 
-#define NETSAN_VERSION	"0.1"
+#define _NETSAN_VERSION	"0.1"
+#define NETSAN_VERSION	_NETSAN_VERSION " " NETSAN_DATE
 
 #define PROXY_PORT	1234
 
@@ -126,7 +118,7 @@ void *fn( void *opaque)
 //	printf( "max=%d\n", max);
 	while (!local_end)
 	{
-#define MAX_BUF	(400 * 1024)
+#define MAX_BUF	(64 * 1024)
 		char buf[MAX_BUF + 2], *ptr;
 		fd_set rfds;
 		struct timeval tv;
