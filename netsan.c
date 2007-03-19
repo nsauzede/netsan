@@ -43,10 +43,12 @@
 #define CMD_QUIT	CMD_PRL "quit"		// client
 #define CMD_EXIT	CMD_PRL "exit"		// app
 #define ARG_DISC	"-disc"
+#define ARG_AUTH	"-auth"
 
 int end = 0;
 int init = 0;
 int disc = 0;
+char *auth = NULL;
 char *ch = 0;
 int cp = 0;
 int iscurse = 1;		// iscurse=1 means we can kbhit()/select() on stdin (default on linux)
@@ -125,6 +127,8 @@ void *fn( void *opaque)
 		int src, dst;
 		int col = 0, size;
 		static int header = 1;
+		static int authsent = 0;
+		static int disauth = 0;
 
 		if (!(css && cs) && header && !istty)
 		{
@@ -308,8 +312,74 @@ void *fn( void *opaque)
 //					printf( "disc=%d src=%d\n", disc, src);
 					if (!disc /*&& (src <= 0)*/ && (dst > 0))
 					{
+						if (!disauth && auth && dst == cs)
+						{
+							char *ptr2 = ptr;
+							int len = 0;
+//							printf( "about to filter in put : n=%d buf=[%s]\n", n, ptr);
+							while (1)
+							{
+								char tmps[MAX_BUF];
+								char *ptr3;
+
+								ptr3 = strchr( ptr2, '\n');
+								if (ptr3)
+								{
+									int size;
+									char old;
+
+//									strcat( tmps, "\n");
+									size = ptr3 - ptr2 + 1;
+									len += size;
+									if (len > n)
+										break;
+									if (!authsent && !disauth)
+									{
+										if (strstr( ptr2, "Proxy-Authorization: "))
+										{
+											printf( "(disabled auth)\n");
+											disauth = 1;
+										}
+										else if (!strncmp( ptr2, "\n", 1) || !strncmp( ptr2, "\r\n", 2))
+										{
+											sprintf( tmps, "Proxy-Authorization: Basic %s\n", auth);
+											send( dst, tmps, strlen( tmps), 0);
+											printf( "(sent auth)\n");
+											authsent = 1;
+										}
+									}
+									send( dst, ptr2, size, 0);
+									old = *(ptr3+1);
+									*(ptr3+1)= 0;
+//									printf( "got [%s] to send\n", ptr2);
+									*(ptr3+1) = old;
+									ptr2 += size;
+								}
+#if 0
+								if (sscanf( ptr2, "%[^\n]s", tmps) == 1)
+								{
+									int size;
+
+									strcat( tmps, "\n");
+									size = strlen( tmps);
+									printf( "got [%s] to send\n", tmps);
+									send( dst, tmps, size, 0);
+									ptr2 += size;
+								}
+#endif
+								else
+								{
+//										printf( "end of transfer (sscanf failed)\n");
+									break;
+								}
+							}
+						}
+						else
+						{
+							authsent = 0;
 //						printf( "Sending n=%d ptr=[%s] to dst=%d cs=%d css=%d..\n", n, ptr, dst, cs, css);
 						send( dst, ptr, n, 0);
+						}
 					}
 					if (src > 0)
 					{
@@ -412,7 +482,7 @@ int main( int argc, char *argv[])
 	int sp = 0;
 	struct sockaddr_in csa, sa;
 	int arg = 1, on;
-	
+
 #ifdef WIN32
 //	HandlerRoutine
 	DWORD mode;
@@ -470,10 +540,16 @@ int main( int argc, char *argv[])
 						disc = 1;
 						arg++;
 					}
+					else if (!strcmp( argv[arg], ARG_AUTH))
+					{
+						arg++;
+						if (argc > arg)
+							auth = argv[arg++];
+					}
 					else
 					{
 						sscanf( argv[arg++], "%d", &cp);
-						break;
+//						break;
 					}
 				}
 				if (!cp)
@@ -529,7 +605,7 @@ int main( int argc, char *argv[])
 			socklen_t clen;
 			struct hostent *he;
 		
-			printf( "--accepting on localhost:%d", sp);
+			printf( "--accepting on localhost:%d (disc=%d,auth=%s)", sp, disc, auth ? auth : "");
 			if (ch)
 				printf( " <= proxy => %s:%d", ch, cp);
 			printf( "\n");

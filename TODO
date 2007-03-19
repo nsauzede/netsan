@@ -1,9 +1,8 @@
 -fix bind error not managed
 -fix read error msg when server close socket on mingw
 -!!!!!move local kb handling to main thread? conflict with worker thread(s) i/o?
--fix direction for incoming data in server mode for non-ANSI term (w32 console)
--add http proxy auth Basic
  -maybe implement a fifo between them ?
+-fix direction for incoming data in server mode for non-ANSI term (w32 console)
 -truly conform to new args syntax (nc like)
 -add codepage support ?
 -add hexdump support ?
@@ -11,6 +10,7 @@
 -replay transactions ?
 
 Done:
+-added http proxy auth Basic
 -fixed libsocket error codes for mingw32
 -removed need for ctor
 -validated server&proxy modes in recv on mingw32
