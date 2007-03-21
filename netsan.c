@@ -77,11 +77,26 @@ void *fn( void *opaque)
 
 	int cs = 0, max = 0;
 	struct sockaddr_in ca;
-	int cscol = 32, ccol = 31;
+	int cscol, ccol;
+#ifdef WIN32
+	int normcol;
+#endif
 	int n;
 	int local_end = 0;
 	int kill_global = 0;
 
+#ifdef WIN32
+	if (!iscurse)
+	{
+	cscol = FOREGROUND_GREEN | FOREGROUND_INTENSITY; ccol = FOREGROUND_RED | FOREGROUND_INTENSITY; normcol = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+	}
+	else
+	{
+#endif
+	cscol = 32; ccol = 31;
+#ifdef WIN32
+	}
+#endif
 	if (ch)
 	{
 //		printf( "[%d]++connecting server..\n", (int)pid);
@@ -393,22 +408,71 @@ void *fn( void *opaque)
 						{
 //							printf( "[%d]", (int)pid);
 							if (istty)
+							{
+#ifdef WIN32
+								if (!iscurse)
+								SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE), col);
+								else
+								{
+#endif
 								printf( "\x1b[01;%02dm", col);
+#ifdef WIN32
+								}
+#endif
+							}
 							printf( "%s", ptr);
 							if (istty)
+							{
+#ifdef WIN32
+								if (!iscurse)
+								SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE), normcol);
+								else
+								{
+#endif
 								printf( "\x1b[00m");
+#ifdef WIN32
+								}
+#endif
+							}
 						}
 						else
 						{
 //							printf( "[%d]", (int)pid);
 							if (istty)
+							{
+#ifdef WIN32
+								if (!iscurse)
+								SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE), normcol);
+								else
+								{
+#endif
 								printf( "\x1b[00m");
+#ifdef WIN32
+								}
+#endif
+							}
 							printf( "%s", ptr);
 							if (istty)
+							{
+#ifdef WIN32
+								if (!iscurse)
+								SetConsoleTextAttribute( GetStdHandle( STD_OUTPUT_HANDLE), normcol);
+								else
+								{
+#endif
 								printf( "\x1b[00m");
+#ifdef WIN32
+								}
+#endif
+							}
 						}
 						if (istty)
+						{
+#ifdef WIN32
+							if (iscurse)
+#endif
 							printf( "\x1b[m");
+						}
 						fflush( stdout);
 					}
 				}
@@ -491,13 +555,13 @@ int main( int argc, char *argv[])
 	if (GetConsoleMode( GetStdHandle(STD_INPUT_HANDLE), &mode))
 	{
 //		printf( "GetConsoleMode returned TRUE : mode=%08lx\n", mode);
-		iscurse = 1;
-		istty = 0;
+		iscurse = 0;
+		istty = 1;
 	}
 	else
 	{
 //		printf( "GetConsoleMode returned FALSE\n");
-		iscurse = 0;
+		iscurse = 1;
 		istty = 1;
 	}
 /*
