@@ -44,6 +44,8 @@
 #define CMD_EXIT	CMD_PRL "exit"		// app
 #define ARG_DISC	"-disc"
 #define ARG_AUTH	"-auth"
+#define ARG_TUNNEL	"-tunnel"
+#define ARG_PROXY	"-proxy"
 
 int end = 0;
 int init = 0;
@@ -51,6 +53,10 @@ int disc = 0;
 char *auth = NULL;
 char *ch = 0;
 int cp = 0;
+int tunnel = 0;
+char *th = 0;
+int tp = 0;
+int proxy = 0;
 int iscurse = 1;		// iscurse=1 means we can kbhit()/select() on stdin (default on linux)
 int istty = 1;		// istty=1 means we can output ANSI codes (default on linux)
 
@@ -122,6 +128,30 @@ void *fn( void *opaque)
 //		printf( "[%d]++connected !!\n", (int)pid);
 		printf( "++connected !!\n");
 		max = cs;
+		if (proxy)
+		{
+			char buf[1024];
+
+//			snprintf( buf, sizeof( buf), "CONNECT %s:%d\n", th, tp);
+			snprintf( buf, sizeof( buf), "CONNECT sauzede.homedns.org:443 HTTP/1.0\nHost: sauzede.homedns.org");
+			write( cs, buf, strlen( buf));
+			printf( "++sent proxy {%s}\n", buf);
+			snprintf( buf, sizeof( buf), "User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)\nContent-Length: 0\nProxy-Connection: Keep-Alive\n");
+			write( cs, buf, strlen( buf));
+			printf( "++sent proxy {%s}\n", buf);
+			snprintf( buf, sizeof( buf), "Proxy-Authorization: Basic c2F1emVkZW46YWdhM2dsb3Vwcw==\n\n");
+			write( cs, buf, strlen( buf));
+			printf( "++sent proxy {%s}\n", buf);
+			read( cs, buf, sizeof( buf));
+		}
+		if (tunnel)
+		{
+			char buf[1024];
+
+			snprintf( buf, sizeof( buf), "%s %d\n", th, tp);
+			write( cs, buf, strlen( buf));
+			printf( "++sent tunnel {%s}\n", buf);
+		}
 	}
 	else
 	{
@@ -610,10 +640,33 @@ int main( int argc, char *argv[])
 						if (argc > arg)
 							auth = argv[arg++];
 					}
-					else
+					else if (!strcmp( argv[arg], ARG_TUNNEL))
 					{
+						tunnel = 1;
+						arg++;
+					}
+					else if (!strcmp( argv[arg], ARG_PROXY))
+					{
+						proxy = 1;
+						arg++;
+					}
+					else if (isdignum( argv[arg]))
+					{
+						if (tunnel)
+						sscanf( argv[arg++], "%d", &tp);
+						else
 						sscanf( argv[arg++], "%d", &cp);
 //						break;
+					}
+					else
+					{
+						if (tunnel)
+						{
+							if (th)
+								free( th);
+							th = malloc( 1024);
+							strcpy( th, argv[arg++]);
+						}
 					}
 				}
 				if (!cp)
@@ -638,9 +691,13 @@ int main( int argc, char *argv[])
 //		printf( "\n(telnet mode) :");
 		printf( " %s remote_host remote_port\n", basename( argv[0]));
 //		printf( "\n(server/proxy mode) :");
-		printf( " %s -l -p local_port [remote_host [remote_port=local_port] [-disc]]\n", basename( argv[0]));
+		printf( " %s -l -p local_port [remote_host [remote_port=local_port] [-disc] [-proxy] [-tunnel [host] [port]]]\n", basename( argv[0]));
 		printf( "\n\n");
 		return -1;
+	}
+	if (tunnel)
+	{
+		printf( "--tunnel : ch=%s cp=%d th=%s tp=%d\n", ch, cp, th, tp);
 	}
 
 	if (sp)
