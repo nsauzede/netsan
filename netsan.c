@@ -46,10 +46,12 @@
 #define ARG_AUTH	"-auth"
 #define ARG_TUNNEL	"-tunnel"
 #define ARG_PROXY	"-proxy"
+#define ARG_QUIET	"-quiet"
 
 int end = 0;
 int init = 0;
 int disc = 0;
+int quiet = 0;
 char *auth = NULL;
 char *ch = 0;
 int cp = 0;
@@ -108,9 +110,11 @@ void *fn( void *opaque)
         {
                 if (!tp)
                 {
-                        printf( "++reading tunnel...\n");
+			if (!quiet)
+                        	printf( "++reading tunnel...\n");
                         tunlen = read( css, buf, sizeof( buf));
-                        printf( "++read tunnel {%s}\n", buf);
+			if (!quiet)
+                        	printf( "++read tunnel {%s}\n", buf);
                         ch = malloc( 1024);
                         sscanf( buf, "%s %d", ch, &cp);
                 }
@@ -118,7 +122,8 @@ void *fn( void *opaque)
 	if (ch)
 	{
 //		printf( "[%d]++connecting server..\n", (int)pid);
-		printf( "++connecting to %s:%d..\n", ch, cp);
+		if (!quiet)
+			printf( "++connecting to %s:%d..\n", ch, cp);
 		cs = socket( PF_INET, SOCK_STREAM, 0);
 		memset( &ca, 0, sizeof( ca));
 		he = gethostbyname( ch);
@@ -138,7 +143,8 @@ void *fn( void *opaque)
 		}
 
 //		printf( "[%d]++connected !!\n", (int)pid);
-		printf( "++connected !!\n");
+		if (!quiet)
+		         printf( "++connected !!\n");
 		max = cs;
 		if (proxy)
 		{
@@ -147,13 +153,16 @@ void *fn( void *opaque)
 //			snprintf( buf, sizeof( buf), "CONNECT %s:%d\n", th, tp);
 			snprintf( buf, sizeof( buf), "CONNECT sauzede.homedns.org:443 HTTP/1.0\nHost: sauzede.homedns.org");
 			write( cs, buf, strlen( buf));
-			printf( "++sent proxy {%s}\n", buf);
+			if (!quiet)
+			         printf( "++sent proxy {%s}\n", buf);
 			snprintf( buf, sizeof( buf), "User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)\nContent-Length: 0\nProxy-Connection: Keep-Alive\n");
 			write( cs, buf, strlen( buf));
-			printf( "++sent proxy {%s}\n", buf);
+			if (!quiet)
+			         printf( "++sent proxy {%s}\n", buf);
 			snprintf( buf, sizeof( buf), "Proxy-Authorization: Basic c2F1emVkZW46YWdhM2dsb3Vwcw==\n\n");
 			write( cs, buf, strlen( buf));
-			printf( "++sent proxy {%s}\n", buf);
+			if (!quiet)
+			         printf( "++sent proxy {%s}\n", buf);
 			read( cs, buf, sizeof( buf));
 		}
 		if (tunnel)
@@ -162,7 +171,8 @@ void *fn( void *opaque)
 			{
 				snprintf( buf, sizeof( buf), "%s %d\n", th, tp);
 				write( cs, buf, strlen( buf));
-				printf( "++sent tunnel {%s}\n", buf);
+				if (!quiet)
+				         printf( "++sent tunnel {%s}\n", buf);
 			}
 			else
 			{
@@ -175,7 +185,8 @@ void *fn( void *opaque)
 				if (p < tunlen)
 				{
 					n = write( cs, buf + p, tunlen - p);
-					printf( "++sent remaining %d bytes\n", tunlen - p);
+					if (!quiet)
+					         printf( "++sent remaining %d bytes\n", tunlen - p);
 				}
 			}
 		}
@@ -204,7 +215,8 @@ void *fn( void *opaque)
 
 		if (!(css && cs) && header && !istty)
 		{
-			printf( "<");fflush( stdout);
+			if (!quiet)
+			         printf( "<");fflush( stdout);
 			header = 0;
 		}
 
@@ -226,7 +238,8 @@ void *fn( void *opaque)
 		{
 			perror( "++select");
 //			printf( "[%d]leaving because select error\n", (int)pid);
-			printf( "++leaving because select error\n");
+			if (!quiet)
+			         printf( "++leaving because select error\n");
 			n = 0;
 			break;
 		}
@@ -388,7 +401,7 @@ void *fn( void *opaque)
 						{
 							char *ptr2 = ptr;
 							int len = 0;
-//							printf( "about to filter in put : n=%d buf=[%s]\n", n, ptr);
+//							printf( "about to filter input : n=%d buf=[%s]\n", n, ptr);
 							while (1)
 							{
 								char tmps[MAX_BUF];
@@ -409,14 +422,16 @@ void *fn( void *opaque)
 									{
 										if (strstr( ptr2, "Proxy-Authorization: "))
 										{
-											printf( "(disabled auth)\n");
+											if (!quiet)
+											         printf( "(disabled auth)\n");
 											disauth = 1;
 										}
 										else if (!strncmp( ptr2, "\n", 1) || !strncmp( ptr2, "\r\n", 2))
 										{
 											sprintf( tmps, "Proxy-Authorization: Basic %s\n", auth);
 											send( dst, tmps, strlen( tmps), 0);
-											printf( "(sent auth)\n");
+											if (!quiet)
+											         printf( "(sent auth)\n");
 											authsent = 1;
 										}
 									}
@@ -434,7 +449,8 @@ void *fn( void *opaque)
 
 									strcat( tmps, "\n");
 									size = strlen( tmps);
-									printf( "got [%s] to send\n", tmps);
+									if (!quiet)
+									         printf( "got [%s] to send\n", tmps);
 									send( dst, tmps, size, 0);
 									ptr2 += size;
 								}
@@ -453,7 +469,7 @@ void *fn( void *opaque)
 						send( dst, ptr, n, 0);
 						}
 					}
-					if (src > 0)
+					if (src > 0 && !quiet)
 					{
 						asciify( buf, n + 1);
 						if (istty)
@@ -541,19 +557,22 @@ connect_error:
 	if (css)
 	{
 //		printf( "[%d]++closing client\n", (int)pid);
-		printf( "++closing client\n");
+		if (!quiet)
+		         printf( "++closing client\n");
 		close( css);
 	}
 	if (cs)
 	{
 //		printf( "[%d]++closing server\n", (int)pid);
-		printf( "++closing server\n");
+		if (!quiet)
+		         printf( "++closing server\n");
 		close( cs);
 	}
 
 	if (kill_global)
 	{
-		printf( "++kill global..\n");
+		if (!quiet)
+		         printf( "++kill global..\n");
 		end = 1;
 	}
 
@@ -661,6 +680,11 @@ int main( int argc, char *argv[])
 						disc = 1;
 						arg++;
 					}
+					else if (!strcmp( argv[arg], ARG_QUIET))
+					{
+						quiet = 1;
+						arg++;
+					}
 					else if (!strcmp( argv[arg], ARG_AUTH))
 					{
 						arg++;
@@ -724,7 +748,8 @@ int main( int argc, char *argv[])
 	}
 	if (tunnel)
 	{
-		printf( "--tunnel : ch=%s cp=%d th=%s tp=%d\n", ch, cp, th, tp);
+		if (!quiet)
+		         printf( "--tunnel : ch=%s cp=%d th=%s tp=%d\n", ch, cp, th, tp);
 	}
 
 	if (sp)
@@ -753,33 +778,40 @@ int main( int argc, char *argv[])
 			socklen_t clen;
 			struct hostent *he;
 		
-			printf( "--accepting on localhost:%d (disc=%d,auth=%s)", sp, disc, auth ? auth : "");
-			if (ch)
-				printf( " <= proxy => %s:%d", ch, cp);
-			printf( "\n");
+			if (!quiet)
+			{
+				printf( "--accepting on localhost:%d (disc=%d,auth=%s)", sp, disc, auth ? auth : "");
+				if (ch)
+				         printf( " <= proxy => %s:%d", ch, cp);
+			         printf( "\n");
+			}
 			clen = sizeof( csa);
 			css = accept( ss, (struct sockaddr *)&csa, &clen);
 			if (css < 0)
 				continue;
 		
 			he = gethostbyaddr( (char *)&csa.sin_addr, sizeof( csa.sin_addr), AF_INET);
-			printf( "--accepted !! client=%s (%s)\n", inet_ntoa( csa.sin_addr), he ? he->h_name : "*UNRESOLVED*");
+			if (!quiet)
+			         printf( "--accepted !! client=%s (%s)\n", inet_ntoa( csa.sin_addr), he ? he->h_name : "*UNRESOLVED*");
 			if (!pthread_create( &tid, NULL, fn, (void *)(long int)css))
 			{
-				printf( "--succesfully created thread\n");
+				if (!quiet)
+				         printf( "--succesfully created thread\n");
 			}
 			else
 				perror( "--pthread_create");
 //			close( css);
 //			printf( "--closed css\n");fflush( stdout);
 		}
-		printf( "--closing listening server\n");
+		if (!quiet)
+		         printf( "--closing listening server\n");
 bailout:
 		close( ss);
 	}
 	else
 	{
-		printf( "--telnet mode - remote server is %s:%d\n", ch, cp);
+		if (!quiet)
+		         printf( "--telnet mode - remote server is %s:%d\n", ch, cp);
 		fn( (void *)0);
 	}
 	
