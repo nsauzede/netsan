@@ -682,15 +682,14 @@ int main( int argc, char *argv[])
 	}
 	if (argc > arg)
 	{
-		char *ptr;
-		ptr = argv[arg++];
-		if (isdignum( ptr))
+		ch = argv[arg++];
+		if (isdignum( ch))
 		{
-			sscanf( ptr, "%d", &sp);
+			sscanf( ch, "%d", &sp);
 			init = 1;
 			if (argc > arg)
 			{
-				ptr = argv[arg++];
+				ch = argv[arg++];
 //				printf( "looking up cp/disc\n");
 				while (argc > arg)
 				{
@@ -745,7 +744,6 @@ int main( int argc, char *argv[])
 		}
 		else
 		{
-			ch = ptr;
 			if (argc > arg)
 			{
 				sscanf( argv[arg++], "%d", &cp);
