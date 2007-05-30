@@ -116,8 +116,8 @@ void *fn( void *opaque)
                         tunlen = read( css, buf, sizeof( buf));
 			if (!quiet)
                         	printf( "++read tunnel {%s}\n", buf);
-			if (ch)
-				free( ch);
+//			if (ch)
+//				free( ch);
                         ch = malloc( 1024);
 			n = sscanf( buf, "%*s %s %d", ch, &cp);
 			if ((n != 2) || strncmp( buf, MAGIC_TUNNEL, strlen( MAGIC_TUNNEL)))
