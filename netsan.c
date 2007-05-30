@@ -87,9 +87,10 @@ void *fn( void *opaque)
 #ifdef WIN32
 	int normcol;
 #endif
-	int n;
+	int n, tunlen = 0;
 	int local_end = 0;
 	int kill_global = 0;
+        char buf[1024];
 
 #ifdef WIN32
 	if (!iscurse)
@@ -103,6 +104,17 @@ void *fn( void *opaque)
 #ifdef WIN32
 	}
 #endif
+        if (tunnel)
+        {
+                if (!tp)
+                {
+                        printf( "++reading tunnel...\n");
+                        tunlen = read( css, buf, sizeof( buf));
+                        printf( "++read tunnel {%s}\n", buf);
+                        ch = malloc( 1024);
+                        sscanf( buf, "%s %d", ch, &cp);
+                }
+        }
 	if (ch)
 	{
 //		printf( "[%d]++connecting server..\n", (int)pid);
@@ -146,11 +158,26 @@ void *fn( void *opaque)
 		}
 		if (tunnel)
 		{
-			char buf[1024];
-
-			snprintf( buf, sizeof( buf), "%s %d\n", th, tp);
-			write( cs, buf, strlen( buf));
-			printf( "++sent tunnel {%s}\n", buf);
+			if (tp)
+			{
+				snprintf( buf, sizeof( buf), "%s %d\n", th, tp);
+				write( cs, buf, strlen( buf));
+				printf( "++sent tunnel {%s}\n", buf);
+			}
+			else
+			{
+				int p = 0;
+				while (p < tunlen)
+				{
+					if (buf[p++] == '\n')
+						break;
+				}
+				if (p < tunlen)
+				{
+					n = write( css, buf + p, tunlen - p);
+					printf( "++sent remaining %d bytes\n", tunlen - p);
+				}
+			}
 		}
 	}
 	else
@@ -355,7 +382,7 @@ void *fn( void *opaque)
 				if (n)
 				{
 //					printf( "disc=%d src=%d\n", disc, src);
-					if (!disc /*&& (src <= 0)*/ && (dst > 0))
+					if ((!disc || (src <= 0)) && (dst > 0))
 					{
 						if (!disauth && auth && dst == cs)
 						{
@@ -669,7 +696,7 @@ int main( int argc, char *argv[])
 						}
 					}
 				}
-				if (!cp)
+				if (!cp && !tunnel)
 					cp = sp;
 			}
 		}
