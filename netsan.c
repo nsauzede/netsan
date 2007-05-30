@@ -47,6 +47,7 @@
 #define ARG_TUNNEL	"-tunnel"
 #define ARG_PROXY	"-proxy"
 #define ARG_QUIET	"-quiet"
+#define MAGIC_TUNNEL	"CONNECT"
 
 int end = 0;
 int init = 0;
@@ -115,8 +116,18 @@ void *fn( void *opaque)
                         tunlen = read( css, buf, sizeof( buf));
 			if (!quiet)
                         	printf( "++read tunnel {%s}\n", buf);
+			if (ch)
+				free( ch);
                         ch = malloc( 1024);
-                        sscanf( buf, "%s %d", ch, &cp);
+			n = sscanf( buf, "%*s %s %d", ch, &cp);
+			if ((n != 2) || strncmp( buf, MAGIC_TUNNEL, strlen( MAGIC_TUNNEL)))
+			{
+				if (!quiet)
+					printf( "++INVALID TUNNEL!! n=%d\n", n);
+				free( ch);
+				ch = 0;
+				goto connect_error;
+			}
                 }
         }
 	if (ch)
@@ -138,7 +149,8 @@ void *fn( void *opaque)
 		n = connect( cs, (struct sockaddr *)&ca, sizeof( ca));
 		if (n != 0)
 		{
-			perror( "++connect");
+			if (!quiet)
+				perror( "++connect");
 			goto connect_error;
 		}
 
@@ -169,7 +181,7 @@ void *fn( void *opaque)
 		{
 			if (tp)
 			{
-				snprintf( buf, sizeof( buf), "%s %d\n", th, tp);
+				snprintf( buf, sizeof( buf), "%s %s %d\n", MAGIC_TUNNEL, th, tp);
 				write( cs, buf, strlen( buf));
 				if (!quiet)
 				         printf( "++sent tunnel {%s}\n", buf);
@@ -236,7 +248,8 @@ void *fn( void *opaque)
 //		printf( "select returned %d\n", n);
 		if (n == -1)
 		{
-			perror( "++select");
+			if (!quiet)
+			        perror( "++select");
 //			printf( "[%d]leaving because select error\n", (int)pid);
 			if (!quiet)
 			         printf( "++leaving because select error\n");
@@ -303,7 +316,8 @@ void *fn( void *opaque)
 #endif
 			if (n < 0)
 			{
-				perror( "++read");
+				if (!quiet)
+				        perror( "++read");
 				break;
 			}
 			else if (n == 0)
@@ -568,6 +582,11 @@ connect_error:
 		         printf( "++closing server\n");
 		close( cs);
 	}
+	if (ch)
+	{
+		free( ch);
+		ch = 0;
+	}
 
 	if (kill_global)
 	{
@@ -663,15 +682,15 @@ int main( int argc, char *argv[])
 	}
 	if (argc > arg)
 	{
-		ch = argv[arg++];
-		if (isdignum( ch))
+		char *ptr;
+		ptr = argv[arg++];
+		if (isdignum( ptr))
 		{
-			sscanf( ch, "%d", &sp);
-			ch = 0;
+			sscanf( ptr, "%d", &sp);
 			init = 1;
 			if (argc > arg)
 			{
-				ch = argv[arg++];
+				ptr = argv[arg++];
 //				printf( "looking up cp/disc\n");
 				while (argc > arg)
 				{
@@ -726,6 +745,7 @@ int main( int argc, char *argv[])
 		}
 		else
 		{
+			ch = ptr;
 			if (argc > arg)
 			{
 				sscanf( argv[arg++], "%d", &cp);
@@ -763,12 +783,14 @@ int main( int argc, char *argv[])
 		setsockopt( ss, SOL_SOCKET, SO_REUSEADDR, (const void *)&on, sizeof( on));
 		if (bind( ss, (struct sockaddr *)&sa, sizeof( sa)))
 		{
-			perror( "bind");
+			if (!quiet)
+			        perror( "bind");
 			goto bailout;
 		}
 		if (listen( ss, 1))
 		{
-			perror( "listen");
+			if (!quiet)
+			        perror( "listen");
 			goto bailout;
 		}
 		end = 0;
@@ -799,7 +821,8 @@ int main( int argc, char *argv[])
 				         printf( "--succesfully created thread\n");
 			}
 			else
-				perror( "--pthread_create");
+				if (!quiet)
+				        perror( "--pthread_create");
 //			close( css);
 //			printf( "--closed css\n");fflush( stdout);
 		}
