@@ -174,7 +174,7 @@ void *fn( void *opaque)
 				}
 				if (p < tunlen)
 				{
-					n = write( css, buf + p, tunlen - p);
+					n = write( cs, buf + p, tunlen - p);
 					printf( "++sent remaining %d bytes\n", tunlen - p);
 				}
 			}
