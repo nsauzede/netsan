@@ -582,7 +582,7 @@ connect_error:
 		         printf( "++closing server\n");
 		close( cs);
 	}
-	if (ch)
+	if (ch && !tp)
 	{
 		free( ch);
 		ch = 0;
