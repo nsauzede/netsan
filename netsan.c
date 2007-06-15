@@ -162,20 +162,23 @@ void *fn( void *opaque)
 		{
 			char buf[1024];
 
-//			snprintf( buf, sizeof( buf), "CONNECT %s:%d\n", th, tp);
-			snprintf( buf, sizeof( buf), "CONNECT sauzede.homedns.org:443 HTTP/1.0\nHost: sauzede.homedns.org");
-			write( cs, buf, strlen( buf));
+#if 0	// mozilla
+			snprintf( buf, sizeof( buf), "CONNECT sauzede.homedns.org:443 HTTP/1.1\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8.1.3) Gecko/20070309 Firefox/2.0.0.3\n"); write( cs, buf, strlen( buf));
+#elif 0 // gtalk
+#else	// iexplore
+			snprintf( buf, sizeof( buf), "CONNECT sauzede.homedns.org:443 HTTP/1.0\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "Host: sauzede.homedns.org\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "Content-Length: 0\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "Proxy-Connection: Keep-Alive\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "Pragma: no-cache\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "Proxy-Authorization: Basic c2F1emVkZW46YWdhNGdsb3Vwcw==\n"); write( cs, buf, strlen( buf));
+#endif
+			snprintf( buf, sizeof( buf), "\n"); write( cs, buf, strlen( buf));
 			if (!quiet)
-			         printf( "++sent proxy {%s}\n", buf);
-			snprintf( buf, sizeof( buf), "User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)\nContent-Length: 0\nProxy-Connection: Keep-Alive\n");
-			write( cs, buf, strlen( buf));
-			if (!quiet)
-			         printf( "++sent proxy {%s}\n", buf);
-			snprintf( buf, sizeof( buf), "Proxy-Authorization: Basic c2F1emVkZW46YWdhM2dsb3Vwcw==\n\n");
-			write( cs, buf, strlen( buf));
-			if (!quiet)
-			         printf( "++sent proxy {%s}\n", buf);
-			read( cs, buf, sizeof( buf));
+			         printf( "++sent proxy credentials, reading response..\n");
+			read( cs, buf, sizeof( buf));		// returns something like : HTTP/1.0 200 Connection established
 		}
 		if (tunnel)
 		{
