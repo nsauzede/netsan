@@ -60,6 +60,8 @@ int tunnel = 0;
 char *th = 0;
 int tp = 0;
 int proxy = 0;
+char *ph = 0;
+int pp = 0;
 int iscurse = 1;		// iscurse=1 means we can kbhit()/select() on stdin (default on linux)
 int istty = 1;		// istty=1 means we can output ANSI codes (default on linux)
 
@@ -162,14 +164,19 @@ void *fn( void *opaque)
 		{
 			char buf[1024];
 
+//#define REM_HOST	"sauzede.homedns.org"
+//#define REM_HOST	"edna.ath.cx"
+#define REM_HOST	ph
+//#define REM_PORT	443
+#define REM_PORT	pp
 #if 0	// mozilla
 			snprintf( buf, sizeof( buf), "CONNECT sauzede.homedns.org:443 HTTP/1.1\n"); write( cs, buf, strlen( buf));
 			snprintf( buf, sizeof( buf), "User-Agent: Mozilla/5.0 (Windows; U; Windows NT 5.1; fr; rv:1.8.1.3) Gecko/20070309 Firefox/2.0.0.3\n"); write( cs, buf, strlen( buf));
 #elif 0 // gtalk
 #else	// iexplore
-			snprintf( buf, sizeof( buf), "CONNECT sauzede.homedns.org:443 HTTP/1.0\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "CONNECT %s:%d HTTP/1.0\n", REM_HOST, REM_PORT); write( cs, buf, strlen( buf));
 			snprintf( buf, sizeof( buf), "User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322)\n"); write( cs, buf, strlen( buf));
-			snprintf( buf, sizeof( buf), "Host: sauzede.homedns.org\n"); write( cs, buf, strlen( buf));
+			snprintf( buf, sizeof( buf), "Host: %s\n", REM_HOST); write( cs, buf, strlen( buf));
 			snprintf( buf, sizeof( buf), "Content-Length: 0\n"); write( cs, buf, strlen( buf));
 			snprintf( buf, sizeof( buf), "Proxy-Connection: Keep-Alive\n"); write( cs, buf, strlen( buf));
 			snprintf( buf, sizeof( buf), "Pragma: no-cache\n"); write( cs, buf, strlen( buf));
@@ -721,6 +728,8 @@ int main( int argc, char *argv[])
 					{
 						proxy = 1;
 						arg++;
+						ph = argv[arg++];
+						sscanf( argv[arg++], "%d", &pp);
 					}
 					else if (isdignum( argv[arg]))
 					{
@@ -770,7 +779,12 @@ int main( int argc, char *argv[])
 	if (tunnel)
 	{
 		if (!quiet)
-		         printf( "--tunnel : ch=%s cp=%d th=%s tp=%d\n", ch, cp, th, tp);
+	         printf( "--tunnel : ch=%s cp=%d th=%s tp=%d\n", ch, cp, th, tp);
+	}
+	if (proxy)
+	{
+		if (!quiet)
+	         printf( "--proxy : ph=%s pp=%d\n", ph, pp);
 	}
 
 	if (sp)
