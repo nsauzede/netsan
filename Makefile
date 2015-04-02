@@ -2,7 +2,7 @@ ifndef PREFIX
 PREFIX=/opt
 endif
 
-LIBUNIX=/home/sauzeden/hg/libunix
+LIBUNIX=../libunix
 
 ifndef CC
 CC:=gcc
