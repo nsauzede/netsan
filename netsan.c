@@ -592,7 +592,7 @@ connect_error:
 		         printf( "++closing server\n");
 		close( cs);
 	}
-	if (ch && !tp)
+	if (ch)
 	{
 		free( ch);
 		ch = 0;
@@ -762,6 +762,8 @@ int main( int argc, char *argv[])
 				init = 1;
 			}
 		}
+		if (ch)
+			ch = strdup( ch);
 	}
 //	printf( "testing init\n");
 	if (!init)
