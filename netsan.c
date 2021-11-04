@@ -237,8 +237,9 @@ void *fn( void *opaque)
 
 		if (!(css && cs) && header && !istty)
 		{
-			if (!quiet)
+			if (!quiet) {
 			         printf( "<");fflush( stdout);
+			}
 			header = 0;
 		}
 
